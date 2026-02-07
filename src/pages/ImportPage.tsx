@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { importQueue, normalizationItems } from "../data/mock";
 import type { ImportQueueItem, FileType, NormalizationItem } from "../data/mock";
 import { StatusBadge } from "../components/StatusBadge";
@@ -29,6 +29,7 @@ export function ImportPage() {
   const [active, setActive] = useState<Filter>("すべて");
   const [queue, setQueue] = useState<ImportQueueItem[]>(importQueue);
   const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 正規化確認
   const [normItems, setNormItems] = useState<NormalizationItem[]>(normalizationItems);
@@ -46,15 +47,7 @@ export function ImportPage() {
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    const newItems: ImportQueueItem[] = files.map((file) => ({
-      id: ++nextId,
-      fileName: file.name,
-      fileType: guessFileType(file.name),
-      extractedCount: 0,
-      status: "OCR中" as const,
-    }));
-    setQueue((prev) => [...prev, ...newItems]);
+    addFiles(Array.from(e.dataTransfer.files));
   }
 
   function handleDragOver(e: React.DragEvent) {
@@ -70,6 +63,23 @@ export function ImportPage() {
     e.preventDefault();
     if (e.currentTarget.contains(e.relatedTarget as Node)) return;
     setDragging(false);
+  }
+
+  function addFiles(files: File[]) {
+    const newItems: ImportQueueItem[] = files.map((file) => ({
+      id: ++nextId,
+      fileName: file.name,
+      fileType: guessFileType(file.name),
+      extractedCount: 0,
+      status: "OCR中" as const,
+    }));
+    setQueue((prev) => [...prev, ...newItems]);
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length > 0) addFiles(files);
+    e.target.value = "";
   }
 
   function confirm(id: number) {
@@ -117,12 +127,21 @@ export function ImportPage() {
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
+          onClick={() => fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-xl p-14 text-center transition-all duration-300 cursor-pointer group ${
             dragging
               ? "border-primary bg-primary/5"
               : "border-border bg-bg-cream/60 hover:border-primary/30 hover:bg-bg-cream"
           }`}
         >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.csv,.xlsx,.xls"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
           <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
             {dragging ? "📥" : "📄"}
           </div>
