@@ -1,1 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;500;600;700&family=M+PLUS+2:wght@300;400;500;600;700&display=swap");
+
 @import "tailwindcss";
+
+@theme {
+  --color-bg-base: #f5f3ee;
+  --color-bg-card: #ffffff;
+  --color-bg-cream: #faf8f3;
+  --color-primary: #2c4a6e;
+  --color-primary-light: #4a7196;
+  --color-primary-dark: #1a3350;
+  --color-accent: #8b7355;
+  --color-accent-light: #a89078;
+  --color-text: #1a1a1a;
+  --color-text-secondary: #4a4a4a;
+  --color-text-muted: #8a8a8a;
+  --color-border: #ddd9d0;
+  --color-border-light: #eae7e0;
+  --color-ok: #2e7d4f;
+  --color-ok-bg: #e8f5e9;
+  --color-ok-border: #a5d6a7;
+  --color-caution: #b8860b;
+  --color-caution-bg: #fff8e1;
+  --color-caution-border: #ffe082;
+  --color-ng: #c62828;
+  --color-ng-bg: #ffebee;
+  --color-ng-border: #ef9a9a;
+
+  --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+  --font-body: "M PLUS 2", "Hiragino Sans", sans-serif;
+
+  --shadow-card: 0 1px 3px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.03);
+  --shadow-elevated: 0 4px 12px rgb(0 0 0 / 0.06);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background-color: var(--color-bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 350ms ease-out forwards;
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in-right 300ms ease-out forwards;
+}

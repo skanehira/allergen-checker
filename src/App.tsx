@@ -1,33 +1,37 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useState } from "react";
+import type { ReactNode } from "react";
+import { Layout } from "./components/Layout";
+import { ImportPage } from "./pages/ImportPage";
+import { NormalizePage } from "./pages/NormalizePage";
+import { RecipeLinkPage } from "./pages/RecipeLinkPage";
+import { MatchingPage } from "./pages/MatchingPage";
+import { JudgmentPage } from "./pages/JudgmentPage";
+
+const STEPS = [
+  { id: 1, label: "仕入れ取込" },
+  { id: 2, label: "正規化確認" },
+  { id: 3, label: "レシピ紐づけ" },
+  { id: 4, label: "突合・可視化" },
+  { id: 5, label: "判定確定一覧" },
+];
+
+const pages: Record<number, () => ReactNode> = {
+  1: () => <ImportPage />,
+  2: () => <NormalizePage />,
+  3: () => <RecipeLinkPage />,
+  4: () => <MatchingPage />,
+  5: () => <JudgmentPage />,
+};
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [step, setStep] = useState(1);
+  const render = pages[step] ?? pages[1];
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <Layout steps={STEPS} currentStep={step} onStepChange={setStep}>
+      {render()}
+    </Layout>
+  );
 }
 
-export default App
+export default App;
