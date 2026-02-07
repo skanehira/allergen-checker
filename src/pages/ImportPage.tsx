@@ -82,6 +82,16 @@ export function ImportPage() {
     e.target.value = "";
   }
 
+  function completeItem(id: number) {
+    setQueue((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status: "取込完了" as const } : item)),
+    );
+  }
+
+  function cancelItem(id: number) {
+    setQueue((prev) => prev.filter((item) => item.id !== id));
+  }
+
   function confirm(id: number) {
     setNormItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: "確定" as const } : i)));
   }
@@ -195,21 +205,34 @@ export function ImportPage() {
                     <StatusBadge value={row.status} />
                   </td>
                   <td className="py-3 px-4 text-center">
-                    {row.status === "抽出済み" && (
-                      <button className="text-xs text-primary hover:text-primary-dark font-medium cursor-pointer">
-                        正規化へ →
-                      </button>
-                    )}
-                    {row.status === "OCR中" && (
-                      <button className="text-xs text-text-muted hover:text-text-secondary font-medium cursor-pointer">
-                        再実行
-                      </button>
-                    )}
-                    {row.status === "エラー" && (
-                      <button className="text-xs text-ng hover:text-ng/80 font-medium cursor-pointer">
-                        再試行
-                      </button>
-                    )}
+                    <div className="flex items-center justify-center gap-2">
+                      {row.status === "抽出済み" && (
+                        <button
+                          onClick={() => completeItem(row.id)}
+                          className="text-xs text-ok hover:text-ok/80 font-medium cursor-pointer"
+                        >
+                          完了 ✓
+                        </button>
+                      )}
+                      {row.status === "OCR中" && (
+                        <button className="text-xs text-text-muted hover:text-text-secondary font-medium cursor-pointer">
+                          再実行
+                        </button>
+                      )}
+                      {row.status === "エラー" && (
+                        <button className="text-xs text-ng hover:text-ng/80 font-medium cursor-pointer">
+                          再試行
+                        </button>
+                      )}
+                      {row.status !== "取込完了" && row.status !== "抽出済み" && (
+                        <button
+                          onClick={() => cancelItem(row.id)}
+                          className="text-xs text-text-muted hover:text-ng font-medium cursor-pointer"
+                        >
+                          キャンセル
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
