@@ -54,6 +54,7 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
     onChange(opt.value);
     setOpen(false);
     setQuery("");
+    inputRef.current?.blur();
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

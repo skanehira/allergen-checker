@@ -4,18 +4,41 @@ import type { Ingredient, Recipe, Judgment } from "../data/mock";
 import { StatusBadge } from "../components/StatusBadge";
 import { SearchableSelect } from "../components/SearchableSelect";
 
-function checkIngredient(ingredient: Ingredient, customerAllergens: string[]): Judgment {
-  if (ingredient.allergenUnknown) return "要確認";
-  const matched = ingredient.allergens.filter((a) => customerAllergens.includes(a));
-  if (matched.length > 0) return "NG";
-  return "OK";
+type IngredientCheckResult = {
+  judgment: Judgment;
+  matchedAllergens: string[];
+};
+
+type DishCheckResult = {
+  judgment: Judgment;
+  matchedAllergens: string[];
+  hasUnknown: boolean;
+};
+
+function checkIngredient(
+  ingredient: Ingredient,
+  customerAllergens: string[],
+): IngredientCheckResult {
+  const matchedAllergens = ingredient.allergens.filter((a) => customerAllergens.includes(a));
+  let judgment: Judgment;
+  if (ingredient.allergenUnknown) {
+    judgment = matchedAllergens.length > 0 ? "NG" : "要確認";
+  } else {
+    judgment = matchedAllergens.length > 0 ? "NG" : "OK";
+  }
+  return { judgment, matchedAllergens };
 }
 
-function checkDish(recipe: Recipe, customerAllergens: string[]): Judgment {
+function checkDish(recipe: Recipe, customerAllergens: string[]): DishCheckResult {
   const results = recipe.linkedIngredients.map((i) => checkIngredient(i, customerAllergens));
-  if (results.includes("NG")) return "NG";
-  if (results.includes("要確認")) return "要確認";
-  return "OK";
+  const allMatched = [...new Set(results.flatMap((r) => r.matchedAllergens))];
+  const hasUnknown = recipe.linkedIngredients.some((i) => i.allergenUnknown);
+  const judgments = results.map((r) => r.judgment);
+  let judgment: Judgment;
+  if (judgments.includes("NG")) judgment = "NG";
+  else if (judgments.includes("要確認")) judgment = "要確認";
+  else judgment = "OK";
+  return { judgment, matchedAllergens: allMatched, hasUnknown };
 }
 
 function judgmentIcon(j: Judgment) {
@@ -49,10 +72,10 @@ export function AllergenCheckPage() {
   const customer = customers.find((c) => c.id === selectedCustomerId)!;
   const course = courses.find((c) => c.id === selectedCourseId)!;
 
-  const dishResults = course.dishes.map((dish) => ({
-    dish,
-    judgment: checkDish(dish, customer.allergens),
-  }));
+  const dishResults = course.dishes.map((dish) => {
+    const result = checkDish(dish, customer.allergens);
+    return { dish, ...result };
+  });
 
   const counts = {
     NG: dishResults.filter((r) => r.judgment === "NG").length,
@@ -126,7 +149,7 @@ export function AllergenCheckPage() {
 
       {/* 料理別アコーディオン */}
       <div className="space-y-3">
-        {dishResults.map(({ dish, judgment }) => {
+        {dishResults.map(({ dish, judgment, matchedAllergens }) => {
           const isOpen = expanded.has(dish.id);
           return (
             <div
@@ -150,6 +173,18 @@ export function AllergenCheckPage() {
                     {judgmentIcon(judgment)}
                   </span>
                   <span className="font-display font-medium text-sm">{dish.name}</span>
+                  {matchedAllergens.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {matchedAllergens.map((a) => (
+                        <span
+                          key={a}
+                          className="px-1.5 py-0.5 bg-ng-bg text-ng border border-ng-border rounded text-[11px] font-semibold"
+                        >
+                          {a}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <StatusBadge value={judgment} />
@@ -178,11 +213,7 @@ export function AllergenCheckPage() {
                     </thead>
                     <tbody>
                       {dish.linkedIngredients.map((ing) => {
-                        const ingJudgment = checkIngredient(ing, customer.allergens);
-                        const allergenDisplay =
-                          ing.allergens.length > 0
-                            ? ing.allergens.join(", ") + (ing.allergenUnknown ? "(不明)" : "")
-                            : "—";
+                        const ingResult = checkIngredient(ing, customer.allergens);
                         return (
                           <tr
                             key={ing.id}
@@ -192,11 +223,39 @@ export function AllergenCheckPage() {
                             <td className="py-2.5 px-5 text-sm text-text-secondary">
                               {ing.category}
                             </td>
-                            <td className="py-2.5 px-5 text-sm text-text-secondary">
-                              {allergenDisplay}
+                            <td className="py-2.5 px-5 text-sm">
+                              {ing.allergens.length > 0 ? (
+                                <span className="flex flex-wrap gap-1 items-center">
+                                  {ing.allergens.map((a) =>
+                                    ingResult.matchedAllergens.includes(a) ? (
+                                      <span
+                                        key={a}
+                                        className="px-1.5 py-0.5 bg-ng-bg text-ng border border-ng-border rounded text-[11px] font-semibold"
+                                      >
+                                        {a}
+                                      </span>
+                                    ) : (
+                                      <span key={a} className="text-text-secondary">
+                                        {a}
+                                      </span>
+                                    ),
+                                  )}
+                                  {ing.allergenUnknown && (
+                                    <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
+                                      不明
+                                    </span>
+                                  )}
+                                </span>
+                              ) : ing.allergenUnknown ? (
+                                <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
+                                  不明
+                                </span>
+                              ) : (
+                                "—"
+                              )}
                             </td>
                             <td className="py-2.5 px-5 text-center">
-                              <StatusBadge value={ingJudgment} />
+                              <StatusBadge value={ingResult.judgment} />
                             </td>
                           </tr>
                         );
