@@ -2,6 +2,7 @@ import { useState } from "react";
 import { customers, courses } from "../data/mock";
 import type { Ingredient, Recipe, Judgment } from "../data/mock";
 import { StatusBadge } from "../components/StatusBadge";
+import { SearchableSelect } from "../components/SearchableSelect";
 
 function checkIngredient(ingredient: Ingredient, customerAllergens: string[]): Judgment {
   if (ingredient.allergenUnknown) return "要確認";
@@ -27,6 +28,18 @@ function judgmentIcon(j: Judgment) {
       return "○";
   }
 }
+
+const customerOptions = customers.map((c) => ({
+  value: c.id,
+  label: c.name,
+  sub: `${c.roomNumber} / ${c.checkInDate}`,
+}));
+
+const courseOptions = courses.map((c) => ({
+  value: c.id,
+  label: c.name,
+  sub: `${c.dishes.length} 品`,
+}));
 
 export function AllergenCheckPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number>(customers[0].id);
@@ -61,40 +74,24 @@ export function AllergenCheckPage() {
       {/* 選択エリア */}
       <div className="bg-bg-card border border-border rounded-xl p-5 shadow-card space-y-4">
         <div className="flex flex-wrap gap-4 items-center">
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-text-muted">顧客:</span>
-            <select
-              value={selectedCustomerId}
-              onChange={(e) => {
-                setSelectedCustomerId(Number(e.target.value));
-                setExpanded(new Set());
-              }}
-              className="border border-border rounded-lg px-3 py-1.5 text-sm bg-white"
-            >
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-text-muted">コース:</span>
-            <select
-              value={selectedCourseId}
-              onChange={(e) => {
-                setSelectedCourseId(Number(e.target.value));
-                setExpanded(new Set());
-              }}
-              className="border border-border rounded-lg px-3 py-1.5 text-sm bg-white"
-            >
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SearchableSelect
+            label="顧客"
+            options={customerOptions}
+            value={selectedCustomerId}
+            onChange={(v) => {
+              setSelectedCustomerId(v);
+              setExpanded(new Set());
+            }}
+          />
+          <SearchableSelect
+            label="コース"
+            options={courseOptions}
+            value={selectedCourseId}
+            onChange={(v) => {
+              setSelectedCourseId(v);
+              setExpanded(new Set());
+            }}
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-sm">
