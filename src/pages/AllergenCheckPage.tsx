@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { customers, courses } from "../data/mock";
+import { customers, courses, allergen28Items } from "../data/mock";
 import type { Ingredient, Recipe, Judgment } from "../data/mock";
 import { StatusBadge } from "../components/StatusBadge";
 import { SearchableSelect } from "../components/SearchableSelect";
+import { Modal } from "../components/Modal";
 
 type IngredientCheckResult = {
   judgment: Judgment;
@@ -68,6 +69,10 @@ export function AllergenCheckPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number>(customers[0].id);
   const [selectedCourseId, setSelectedCourseId] = useState<number>(courses[0].id);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [allergenListOpen, setAllergenListOpen] = useState(false);
+
+  const mandatoryItems = allergen28Items.filter((a) => a.category === "義務表示");
+  const recommendedItems = allergen28Items.filter((a) => a.category === "推奨表示");
 
   const customer = customers.find((c) => c.id === selectedCustomerId)!;
   const course = courses.find((c) => c.id === selectedCourseId)!;
@@ -115,6 +120,12 @@ export function AllergenCheckPage() {
               setExpanded(new Set());
             }}
           />
+          <button
+            onClick={() => setAllergenListOpen(true)}
+            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover transition-colors cursor-pointer"
+          >
+            アレルゲン一覧
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -268,6 +279,43 @@ export function AllergenCheckPage() {
           );
         })}
       </div>
+
+      <Modal
+        open={allergenListOpen}
+        onClose={() => setAllergenListOpen(false)}
+        title="特定原材料28品目"
+      >
+        <div className="space-y-5">
+          <div>
+            <h4 className="text-sm font-semibold text-text mb-2">特定原材料 8品目（義務表示）</h4>
+            <div className="flex flex-wrap gap-2">
+              {mandatoryItems.map((item) => (
+                <span
+                  key={item.name}
+                  className="px-3 py-1.5 bg-ng-bg text-ng border border-ng-border rounded-lg text-sm font-semibold"
+                >
+                  {item.name}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="text-sm font-semibold text-text mb-2">
+              特定原材料に準ずるもの 20品目（推奨表示）
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {recommendedItems.map((item) => (
+                <span
+                  key={item.name}
+                  className="px-3 py-1.5 bg-caution-bg text-caution border border-caution-border rounded-lg text-sm font-semibold"
+                >
+                  {item.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

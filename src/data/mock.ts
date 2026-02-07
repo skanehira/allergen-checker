@@ -57,6 +57,48 @@ export type Course = {
   dishes: Recipe[];
 };
 
+// ─── 特定原材料28品目 ───
+
+export type AllergenCategory = "義務表示" | "推奨表示";
+
+export type AllergenItem = {
+  name: string;
+  category: AllergenCategory;
+};
+
+export const allergen28Items: AllergenItem[] = [
+  // 特定原材料8品目（義務表示）
+  { name: "えび", category: "義務表示" },
+  { name: "かに", category: "義務表示" },
+  { name: "くるみ", category: "義務表示" },
+  { name: "小麦", category: "義務表示" },
+  { name: "そば", category: "義務表示" },
+  { name: "卵", category: "義務表示" },
+  { name: "乳", category: "義務表示" },
+  { name: "落花生", category: "義務表示" },
+  // 特定原材料に準ずるもの20品目（推奨表示）
+  { name: "アーモンド", category: "推奨表示" },
+  { name: "あわび", category: "推奨表示" },
+  { name: "いか", category: "推奨表示" },
+  { name: "いくら", category: "推奨表示" },
+  { name: "オレンジ", category: "推奨表示" },
+  { name: "カシューナッツ", category: "推奨表示" },
+  { name: "キウイフルーツ", category: "推奨表示" },
+  { name: "牛肉", category: "推奨表示" },
+  { name: "ごま", category: "推奨表示" },
+  { name: "さけ", category: "推奨表示" },
+  { name: "さば", category: "推奨表示" },
+  { name: "大豆", category: "推奨表示" },
+  { name: "鶏肉", category: "推奨表示" },
+  { name: "バナナ", category: "推奨表示" },
+  { name: "豚肉", category: "推奨表示" },
+  { name: "まつたけ", category: "推奨表示" },
+  { name: "もも", category: "推奨表示" },
+  { name: "やまいも", category: "推奨表示" },
+  { name: "りんご", category: "推奨表示" },
+  { name: "ゼラチン", category: "推奨表示" },
+];
+
 // ─── Mock Data ───
 
 export const importQueue: ImportQueueItem[] = [
