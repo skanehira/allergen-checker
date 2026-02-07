@@ -1,33 +1,194 @@
 import { useState } from "react";
-import { availableIngredients, initialLinked } from "../data/mock";
-import type { Ingredient, IngredientCategory } from "../data/mock";
+import { availableIngredients, recipes as initialRecipes } from "../data/mock";
+import type { Ingredient, IngredientCategory, Recipe } from "../data/mock";
 
 const categories: IngredientCategory[] = ["主食材", "調味料", "共通仕込み"];
 
+type View = "list" | "detail" | "create";
+
 export function RecipeLinkPage() {
-  const [linked, setLinked] = useState<Ingredient[]>(initialLinked);
+  const [view, setView] = useState<View>("list");
+  const [recipeList, setRecipeList] = useState<Recipe[]>(initialRecipes);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [newName, setNewName] = useState("");
   const [search, setSearch] = useState("");
 
+  const selectedRecipe = recipeList.find((r) => r.id === selectedId) ?? null;
+
+  const linked = selectedRecipe?.linkedIngredients ?? [];
   const linkedIds = new Set(linked.map((i) => i.id));
   const filtered = availableIngredients.filter(
     (i) => !linkedIds.has(i.id) && (search === "" || i.name.includes(search)),
   );
 
-  function add(item: Ingredient) {
-    setLinked((prev) => [...prev, item]);
-  }
-  function remove(id: number) {
-    setLinked((prev) => prev.filter((i) => i.id !== id));
+  function openDetail(id: number) {
+    setSelectedId(id);
+    setSearch("");
+    setView("detail");
   }
 
+  function addIngredient(item: Ingredient) {
+    if (!selectedId) return;
+    setRecipeList((prev) =>
+      prev.map((r) =>
+        r.id === selectedId ? { ...r, linkedIngredients: [...r.linkedIngredients, item] } : r,
+      ),
+    );
+  }
+
+  function removeIngredient(itemId: number) {
+    if (!selectedId) return;
+    setRecipeList((prev) =>
+      prev.map((r) =>
+        r.id === selectedId
+          ? { ...r, linkedIngredients: r.linkedIngredients.filter((i) => i.id !== itemId) }
+          : r,
+      ),
+    );
+  }
+
+  function createRecipe() {
+    if (!newName.trim()) return;
+    const newRecipe: Recipe = {
+      id: Math.max(...recipeList.map((r) => r.id)) + 1,
+      name: newName.trim(),
+      version: "v2026-02",
+      linkedIngredients: [],
+    };
+    setRecipeList((prev) => [...prev, newRecipe]);
+    setNewName("");
+    setSelectedId(newRecipe.id);
+    setSearch("");
+    setView("detail");
+  }
+
+  // ─── List View ───
+  if (view === "list") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-base font-medium text-text-secondary">レシピ一覧</h3>
+          <button
+            onClick={() => {
+              setNewName("");
+              setView("create");
+            }}
+            className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
+          >
+            + 新規作成
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {recipeList.map((recipe) => (
+            <button
+              key={recipe.id}
+              onClick={() => openDetail(recipe.id)}
+              className="bg-bg-card border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-elevated transition-all cursor-pointer group"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <h4 className="font-display font-medium text-base group-hover:text-primary transition-colors">
+                  {recipe.name}
+                </h4>
+                <span className="text-[11px] text-text-muted bg-bg-cream border border-border-light rounded px-2 py-0.5 shrink-0 ml-2">
+                  {recipe.version}
+                </span>
+              </div>
+              <p className="text-sm text-text-muted">
+                食材数:{" "}
+                <span className="font-medium text-text-secondary">
+                  {recipe.linkedIngredients.length}
+                </span>{" "}
+                件
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1">
+                {recipe.linkedIngredients.slice(0, 4).map((ing) => (
+                  <span
+                    key={ing.id}
+                    className="text-[11px] px-1.5 py-0.5 bg-bg-cream border border-border-light rounded text-text-muted"
+                  >
+                    {ing.name}
+                  </span>
+                ))}
+                {recipe.linkedIngredients.length > 4 && (
+                  <span className="text-[11px] px-1.5 py-0.5 text-text-muted">
+                    +{recipe.linkedIngredients.length - 4}
+                  </span>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Create View ───
+  if (view === "create") {
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => setView("list")}
+          className="text-sm text-primary hover:text-primary-dark font-medium cursor-pointer"
+        >
+          ← 一覧に戻る
+        </button>
+
+        <div className="bg-bg-card border border-border rounded-xl p-6 shadow-card max-w-lg">
+          <h3 className="font-display text-base font-medium text-text-secondary mb-4">
+            新規レシピ作成
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">料理名</label>
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="例: 鯛のお造り"
+                className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-bg-card placeholder:text-text-muted/50 focus:border-primary/50"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") createRecipe();
+                }}
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setView("list")}
+                className="px-4 py-2 text-sm border border-border rounded-lg text-text-secondary hover:bg-bg-cream transition-colors cursor-pointer"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={createRecipe}
+                disabled={!newName.trim()}
+                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-light transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                作成して食材を紐づける
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Detail View ───
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6">
+      <button
+        onClick={() => setView("list")}
+        className="text-sm text-primary hover:text-primary-dark font-medium cursor-pointer"
+      >
+        ← 一覧に戻る
+      </button>
+
       {/* Recipe selector */}
       <div className="bg-bg-card border border-border rounded-lg px-5 py-3 flex items-center gap-4">
         <span className="text-sm text-text-secondary">料理選択:</span>
-        <span className="text-sm font-medium">銀鱈の西京焼き</span>
+        <span className="text-sm font-medium">{selectedRecipe?.name}</span>
         <span className="text-xs text-text-muted bg-bg-cream border border-border-light rounded px-2 py-0.5">
-          v2026-02
+          {selectedRecipe?.version}
         </span>
       </div>
 
@@ -61,7 +222,7 @@ export function RecipeLinkPage() {
                   <span className="text-[11px] text-text-muted ml-2">{item.category}</span>
                 </div>
                 <button
-                  onClick={() => add(item)}
+                  onClick={() => addIngredient(item)}
                   className="text-xs text-primary hover:text-primary-dark font-medium cursor-pointer"
                 >
                   追加 →
@@ -96,7 +257,7 @@ export function RecipeLinkPage() {
                       >
                         <span className="text-sm">{item.name}</span>
                         <button
-                          onClick={() => remove(item.id)}
+                          onClick={() => removeIngredient(item.id)}
                           className="text-xs text-ng/70 hover:text-ng font-medium cursor-pointer"
                         >
                           × 除外
@@ -107,6 +268,11 @@ export function RecipeLinkPage() {
                 </div>
               );
             })}
+            {linked.length === 0 && (
+              <div className="px-4 py-8 text-center text-sm text-text-muted">
+                左のリストから食材を追加してください
+              </div>
+            )}
           </div>
         </div>
       </div>

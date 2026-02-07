@@ -1,15 +1,70 @@
 import { useState } from "react";
 import { importQueue } from "../data/mock";
+import type { ImportQueueItem, FileType } from "../data/mock";
 import { StatusBadge } from "../components/StatusBadge";
 
 const filters = ["すべて", "PDF", "画像", "CSV", "Excel"] as const;
 type Filter = (typeof filters)[number];
 
+const filterToFileType: Record<Exclude<Filter, "すべて">, FileType> = {
+  PDF: "規格書",
+  画像: "ラベル",
+  CSV: "CSV",
+  Excel: "Excel",
+};
+
+function guessFileType(fileName: string): FileType {
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "pdf") return "規格書";
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) return "ラベル";
+  if (ext === "csv") return "CSV";
+  if (["xlsx", "xls"].includes(ext)) return "Excel";
+  return "CSV";
+}
+
+let nextId = 200;
+
 export function ImportPage() {
   const [active, setActive] = useState<Filter>("すべて");
+  const [queue, setQueue] = useState<ImportQueueItem[]>(importQueue);
+  const [dragging, setDragging] = useState(false);
+
+  const displayed =
+    active === "すべて"
+      ? queue
+      : queue.filter((item) => item.fileType === filterToFileType[active]);
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    const newItems: ImportQueueItem[] = files.map((file) => ({
+      id: ++nextId,
+      fileName: file.name,
+      fileType: guessFileType(file.name),
+      extractedCount: 0,
+      status: "OCR中" as const,
+    }));
+    setQueue((prev) => [...prev, ...newItems]);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+  }
+
+  function handleDragEnter(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setDragging(false);
+  }
 
   return (
-    <div className="space-y-8 max-w-5xl">
+    <div className="space-y-8">
       {/* Upload */}
       <section>
         <h3 className="font-display text-base font-medium text-text-secondary mb-4">
@@ -32,11 +87,23 @@ export function ImportPage() {
           ))}
         </div>
 
-        <div className="border-2 border-dashed border-border rounded-xl p-14 text-center bg-bg-cream/60 hover:border-primary/30 hover:bg-bg-cream transition-all duration-300 cursor-pointer group">
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          className={`border-2 border-dashed rounded-xl p-14 text-center transition-all duration-300 cursor-pointer group ${
+            dragging
+              ? "border-primary bg-primary/5"
+              : "border-border bg-bg-cream/60 hover:border-primary/30 hover:bg-bg-cream"
+          }`}
+        >
           <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
-            📄
+            {dragging ? "📥" : "📄"}
           </div>
-          <p className="text-text-secondary font-medium mb-1">ファイルをドラッグ＆ドロップ</p>
+          <p className="text-text-secondary font-medium mb-1">
+            {dragging ? "ここにドロップしてアップロード" : "ファイルをドラッグ＆ドロップ"}
+          </p>
           <p className="text-text-muted text-sm">
             または <span className="text-primary underline cursor-pointer">参照</span>{" "}
             してアップロード
@@ -49,7 +116,7 @@ export function ImportPage() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display text-base font-medium text-text-secondary">取込キュー</h3>
-          <span className="text-xs text-text-muted">{importQueue.length} 件</span>
+          <span className="text-xs text-text-muted">{displayed.length} 件</span>
         </div>
 
         <div className="bg-bg-card rounded-xl border border-border overflow-hidden shadow-card">
@@ -69,7 +136,7 @@ export function ImportPage() {
               </tr>
             </thead>
             <tbody>
-              {importQueue.map((row) => (
+              {displayed.map((row) => (
                 <tr
                   key={row.id}
                   className="border-b border-border-light last:border-0 hover:bg-bg-cream/30 transition-colors"
@@ -102,6 +169,13 @@ export function ImportPage() {
                   </td>
                 </tr>
               ))}
+              {displayed.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-sm text-text-muted">
+                    該当するファイルがありません
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
