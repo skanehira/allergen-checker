@@ -1,15 +1,20 @@
+import { useLocation, useNavigate } from "react-router-dom";
+
 export type Step = {
   id: number;
   label: string;
+  path: string;
 };
 
 type Props = {
   steps: Step[];
-  currentStep: number;
-  onStepChange: (step: number) => void;
 };
 
-export function Sidebar({ steps, currentStep, onStepChange }: Props) {
+export function Sidebar({ steps }: Props) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentIndex = steps.findIndex((s) => s.path === location.pathname);
+
   return (
     <aside className="w-60 shrink-0 bg-primary-dark text-white flex flex-col">
       {/* Logo */}
@@ -17,23 +22,18 @@ export function Sidebar({ steps, currentStep, onStepChange }: Props) {
         <p className="font-display text-[11px] tracking-[0.25em] text-white/50 mb-1">
           ALLERGEN CHECKER
         </p>
-        <h1 className="font-display text-xl tracking-widest leading-relaxed">
-          アレルゲン
-          <br />
-          チェッカー
-        </h1>
       </div>
 
       {/* Steps */}
       <nav className="flex-1 px-3 py-5">
         <ul className="space-y-0.5">
-          {steps.map((step) => {
-            const isActive = step.id === currentStep;
-            const isCompleted = step.id < currentStep;
+          {steps.map((step, idx) => {
+            const isActive = idx === currentIndex;
+            const isCompleted = idx < currentIndex;
             return (
               <li key={step.id}>
                 <button
-                  onClick={() => onStepChange(step.id)}
+                  onClick={() => navigate(step.path)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 cursor-pointer ${
                     isActive
                       ? "bg-white/12 text-white font-semibold"
