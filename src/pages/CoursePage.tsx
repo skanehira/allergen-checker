@@ -148,6 +148,7 @@ export function CoursePage() {
                 placeholder="例: 3月特別懐石コース"
                 className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-bg-card placeholder:text-text-muted/50 focus:border-primary/50"
                 onKeyDown={(e) => {
+                  if (e.nativeEvent.isComposing) return;
                   if (e.key === "Enter") createCourse();
                 }}
               />

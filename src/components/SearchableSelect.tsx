@@ -57,6 +57,7 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.nativeEvent.isComposing) return;
     if (!open && (e.key === "ArrowDown" || e.key === "Enter")) {
       e.preventDefault();
       setOpen(true);
