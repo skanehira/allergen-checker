@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { recipes as allRecipes, courses as initialCourses } from "../data/mock";
+import { recipes as allRecipes } from "../data/mock";
 import type { Recipe, Course } from "../data/mock";
+import { useCourses } from "../hooks/useCourses";
 
 type View = "list" | "detail" | "create";
 
 export function CoursePage() {
   const [view, setView] = useState<View>("list");
-  const [courseList, setCourseList] = useState<Course[]>(initialCourses);
+  const [courseList, setCourseList] = useCourses();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [newName, setNewName] = useState("");
   const [search, setSearch] = useState("");

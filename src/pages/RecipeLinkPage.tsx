@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { availableIngredients, recipes as initialRecipes } from "../data/mock";
+import { availableIngredients } from "../data/mock";
 import type { Ingredient, IngredientCategory, Recipe } from "../data/mock";
+import { useRecipes } from "../hooks/useRecipes";
 
 const categories: IngredientCategory[] = ["主食材", "調味料", "共通仕込み"];
 
@@ -8,7 +9,7 @@ type View = "list" | "detail" | "create";
 
 export function RecipeLinkPage() {
   const [view, setView] = useState<View>("list");
-  const [recipeList, setRecipeList] = useState<Recipe[]>(initialRecipes);
+  const [recipeList, setRecipeList] = useRecipes();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [newName, setNewName] = useState("");
   const [search, setSearch] = useState("");
@@ -277,13 +278,6 @@ export function RecipeLinkPage() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex justify-end gap-3">
-        <button className="px-5 py-2.5 text-sm border border-border rounded-lg text-text-secondary hover:bg-bg-cream transition-colors cursor-pointer">
-          保存
-        </button>
       </div>
     </div>
   );
