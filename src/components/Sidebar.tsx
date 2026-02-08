@@ -14,6 +14,7 @@ export function Sidebar({ steps }: Props) {
   const location = useLocation();
   const navigate = useNavigate();
   const currentIndex = steps.findIndex((s) => s.path === location.pathname);
+  const isAllergenPage = location.pathname === "/allergens";
 
   return (
     <aside className="w-60 shrink-0 bg-primary-dark text-white flex flex-col">
@@ -59,6 +60,32 @@ export function Sidebar({ steps }: Props) {
             );
           })}
         </ul>
+
+        {/* Utility links */}
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <button
+            onClick={() => navigate("/allergens")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 cursor-pointer ${
+              isAllergenPage
+                ? "bg-white/12 text-white font-semibold"
+                : "text-white/50 hover:bg-white/6 hover:text-white/70"
+            }`}
+          >
+            <svg
+              className="w-5 h-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            <span className="truncate">アレルゲン管理</span>
+          </button>
+        </div>
       </nav>
 
       {/* Footer */}

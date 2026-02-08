@@ -4,6 +4,7 @@ import type { Ingredient, Recipe, Judgment } from "../data/mock";
 import { StatusBadge } from "../components/StatusBadge";
 import { SearchableSelect } from "../components/SearchableSelect";
 import { Modal } from "../components/Modal";
+import { useCustomAllergens } from "../hooks/useCustomAllergens";
 
 type IngredientCheckResult = {
   judgment: Judgment;
@@ -70,6 +71,7 @@ export function AllergenCheckPage() {
   const [selectedCourseId, setSelectedCourseId] = useState<number>(courses[0].id);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [allergenListOpen, setAllergenListOpen] = useState(false);
+  const { items: customAllergens } = useCustomAllergens();
 
   const mandatoryItems = allergen28Items.filter((a) => a.category === "義務表示");
   const recommendedItems = allergen28Items.filter((a) => a.category === "推奨表示");
@@ -330,7 +332,7 @@ export function AllergenCheckPage() {
       <Modal
         open={allergenListOpen}
         onClose={() => setAllergenListOpen(false)}
-        title="特定原材料28品目"
+        title="アレルゲン一覧"
       >
         <div className="space-y-5">
           <div>
@@ -361,6 +363,21 @@ export function AllergenCheckPage() {
               ))}
             </div>
           </div>
+          {customAllergens.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-text mb-2">カスタムアレルゲン</h4>
+              <div className="flex flex-wrap gap-2">
+                {customAllergens.map((name) => (
+                  <span
+                    key={name}
+                    className="px-3 py-1.5 bg-bg-cream border border-border rounded-lg text-sm font-semibold"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>

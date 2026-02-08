@@ -59,7 +59,7 @@ export type Course = {
 
 // ─── 特定原材料28品目 ───
 
-export type AllergenCategory = "義務表示" | "推奨表示";
+export type AllergenCategory = "義務表示" | "推奨表示" | "カスタム";
 
 export type AllergenItem = {
   name: string;
