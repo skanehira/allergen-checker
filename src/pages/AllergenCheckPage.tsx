@@ -112,7 +112,7 @@ export function AllergenCheckPage() {
             options={customerOptions}
             value={selectedCustomerId}
             onChange={(v) => {
-              setSelectedCustomerId(v);
+              setSelectedCustomerId(v as number);
               setExpanded(new Set());
             }}
           />
@@ -121,7 +121,7 @@ export function AllergenCheckPage() {
             options={courseOptions}
             value={selectedCourseId}
             onChange={(v) => {
-              setSelectedCourseId(v);
+              setSelectedCourseId(v as number);
               setExpanded(new Set());
             }}
           />

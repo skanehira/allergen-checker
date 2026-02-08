@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Customer } from "../data/mock";
-import { allergen28Items } from "../data/mock";
+import { allergen28Items, ROOMS } from "../data/mock";
+import { SearchableSelect } from "../components/SearchableSelect";
 import { useCustomers } from "../hooks/useCustomers";
 import { useCustomAllergens } from "../hooks/useCustomAllergens";
 import { Modal } from "../components/Modal";
@@ -188,12 +189,10 @@ function CustomerFormView({
           </div>
           <div>
             <label className="block text-sm text-text-secondary mb-1">部屋名</label>
-            <input
-              type="text"
+            <SearchableSelect
+              options={ROOMS.map((r) => ({ value: r, label: r }))}
               value={form.roomName}
-              onChange={(e) => setForm((prev) => ({ ...prev, roomName: e.target.value }))}
-              placeholder="例: スタイリッシュスイート"
-              className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-bg-card placeholder:text-text-muted/50 focus:border-primary/50"
+              onChange={(v) => setForm((prev) => ({ ...prev, roomName: v as string }))}
             />
           </div>
           <div>

@@ -1,16 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 
 type Option = {
-  value: number;
+  value: string | number;
   label: string;
   sub?: string;
 };
 
 type Props = {
-  label: string;
+  label?: string;
   options: Option[];
-  value: number;
-  onChange: (value: number) => void;
+  value: string | number;
+  onChange: (value: string | number) => void;
 };
 
 export function SearchableSelect({ label, options, value, onChange }: Props) {
@@ -82,9 +82,14 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
     }
   }
 
+  const inline = label != null;
+
   return (
-    <div ref={containerRef} className="relative flex items-center sm:inline-flex">
-      <span className="text-text-muted text-sm mr-2 shrink-0">{label}:</span>
+    <div
+      ref={containerRef}
+      className={inline ? "relative flex items-center sm:inline-flex" : "relative"}
+    >
+      {inline && <span className="text-text-muted text-sm mr-2 shrink-0">{label}:</span>}
       <div className="relative">
         <input
           ref={inputRef}
@@ -100,9 +105,9 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
           }}
           onKeyDown={handleKeyDown}
           placeholder="検索..."
-          className={`border border-border rounded-lg px-3 py-1.5 pr-7 text-sm bg-white hover:border-primary/40 transition-colors w-full sm:min-w-[200px] sm:w-auto ${
-            open ? "border-primary/50 shadow-card" : ""
-          }`}
+          className={`border border-border rounded-lg px-3 py-1.5 pr-7 text-sm bg-white hover:border-primary/40 transition-colors ${
+            inline ? "w-full sm:min-w-[200px] sm:w-auto" : "w-full"
+          } ${open ? "border-primary/50 shadow-card" : ""}`}
         />
         <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted text-[10px] pointer-events-none">
           {open ? "▲" : "▼"}
@@ -110,7 +115,11 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
       </div>
 
       {open && (
-        <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-1 w-full sm:w-72 bg-bg-card border border-border rounded-xl shadow-elevated z-50 overflow-hidden animate-fade-in">
+        <div
+          className={`absolute top-full mt-1 bg-bg-card border border-border rounded-xl shadow-elevated z-50 overflow-hidden animate-fade-in ${
+            inline ? "left-0 sm:right-0 sm:left-auto w-full sm:w-72" : "left-0 w-full"
+          }`}
+        >
           <ul ref={listRef} className="max-h-56 overflow-y-auto py-1">
             {filtered.length === 0 && (
               <li className="px-4 py-3 text-sm text-text-muted text-center">該当なし</li>
