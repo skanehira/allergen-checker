@@ -75,7 +75,7 @@ export function AllergenCheckPage() {
   const customerOptions = customers.map((c) => ({
     value: c.id,
     label: c.name,
-    sub: `${c.roomNumber} / ${c.checkInDate}`,
+    sub: `${c.roomName} / ${c.checkInDate}`,
   }));
 
   const customer = customers.find((c) => c.id === selectedCustomerId);

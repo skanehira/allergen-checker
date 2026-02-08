@@ -48,7 +48,7 @@ export type Customer = {
   condition: string;
   contamination: string;
   checkInDate: string;
-  roomNumber: string;
+  roomName: string;
   notes: string;
   originalText: string;
 };
@@ -285,6 +285,22 @@ export const recipes: Recipe[] = [
   },
 ];
 
+// ─── Rooms ───
+
+export const ROOMS = [
+  "スタイリッシュスイート",
+  "エグゼクティブスタイリッシュスイート",
+  "コンフォートスイート",
+  "エグゼクティブコンフォートスイート",
+  "プレシャスコーナースイート",
+  "エグゼクティブプレシャスコーナースイート",
+  "ラグジュアリーコーナースイート",
+  "エグゼクティブラグジュアリーコーナースイート",
+  "プレミアムスイート",
+  "エグゼクティブプレミアムスイート",
+  "ふふラグジュアリープレミアムスイート",
+] as const;
+
 // ─── Customers ───
 
 export const customers: Customer[] = [
@@ -295,7 +311,7 @@ export const customers: Customer[] = [
     condition: "微量NG",
     contamination: "不可",
     checkInDate: "2026-02-07",
-    roomNumber: "松の間 301",
+    roomName: "スタイリッシュスイート",
     notes: "",
     originalText: "",
   },
@@ -306,7 +322,7 @@ export const customers: Customer[] = [
     condition: "少量可",
     contamination: "要確認",
     checkInDate: "2026-02-08",
-    roomNumber: "竹の間 205",
+    roomName: "コンフォートスイート",
     notes: "",
     originalText: "",
   },
@@ -317,7 +333,7 @@ export const customers: Customer[] = [
     condition: "微量NG",
     contamination: "不可",
     checkInDate: "2026-02-09",
-    roomNumber: "梅の間 102",
+    roomName: "プレミアムスイート",
     notes: "",
     originalText: "",
   },

@@ -14,7 +14,7 @@ const recommendedItems = allergen28Items.filter((a) => a.category === "推奨表
 
 type CustomerForm = {
   name: string;
-  roomNumber: string;
+  roomName: string;
   checkInDate: string;
   allergens: string[];
   condition: string;
@@ -26,7 +26,7 @@ type CustomerForm = {
 function emptyForm(): CustomerForm {
   return {
     name: "",
-    roomNumber: "",
+    roomName: "",
     checkInDate: "",
     allergens: [],
     condition: "不明",
@@ -39,7 +39,7 @@ function emptyForm(): CustomerForm {
 function formFromCustomer(c: Customer): CustomerForm {
   return {
     name: c.name,
-    roomNumber: c.roomNumber,
+    roomName: c.roomName,
     checkInDate: c.checkInDate,
     allergens: [...c.allergens],
     condition: c.condition,
@@ -187,12 +187,12 @@ function CustomerFormView({
             />
           </div>
           <div>
-            <label className="block text-sm text-text-secondary mb-1">部屋番号</label>
+            <label className="block text-sm text-text-secondary mb-1">部屋名</label>
             <input
               type="text"
-              value={form.roomNumber}
-              onChange={(e) => setForm((prev) => ({ ...prev, roomNumber: e.target.value }))}
-              placeholder="例: 松の間 301"
+              value={form.roomName}
+              onChange={(e) => setForm((prev) => ({ ...prev, roomName: e.target.value }))}
+              placeholder="例: スタイリッシュスイート"
               className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-bg-card placeholder:text-text-muted/50 focus:border-primary/50"
             />
           </div>
@@ -352,7 +352,7 @@ export function CustomerListPage() {
             <div className="flex items-start justify-between mb-2">
               <h4 className="font-display font-medium text-base">{customer.name}</h4>
               <span className="text-[11px] px-1.5 py-0.5 bg-bg-cream border border-border-light rounded text-text-muted shrink-0">
-                {customer.roomNumber || "—"}
+                {customer.roomName || "—"}
               </span>
             </div>
             <p className="text-xs text-text-muted mb-2">{customer.checkInDate || "日付未設定"}</p>
@@ -433,7 +433,7 @@ export function CustomerFormPage() {
     const newCustomer: Customer = {
       id: customerList.length > 0 ? Math.max(...customerList.map((c) => c.id)) + 1 : 1,
       name: form.name.trim(),
-      roomNumber: form.roomNumber.trim(),
+      roomName: form.roomName.trim(),
       checkInDate: form.checkInDate,
       allergens: form.allergens,
       condition: form.condition,
@@ -453,7 +453,7 @@ export function CustomerFormPage() {
           ? {
               ...c,
               name: form.name.trim(),
-              roomNumber: form.roomNumber.trim(),
+              roomName: form.roomName.trim(),
               checkInDate: form.checkInDate,
               allergens: form.allergens,
               condition: form.condition,
