@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { customers, courses, allergen28Items } from "../data/mock";
+import { courses, allergen28Items } from "../data/mock";
 import type { Ingredient, Recipe, Judgment } from "../data/mock";
 import { StatusBadge } from "../components/StatusBadge";
 import { SearchableSelect } from "../components/SearchableSelect";
 import { Modal } from "../components/Modal";
 import { useCustomAllergens } from "../hooks/useCustomAllergens";
+import { useCustomers } from "../hooks/useCustomers";
 
 type IngredientCheckResult = {
   judgment: Judgment;
@@ -54,12 +55,6 @@ function judgmentIcon(j: Judgment) {
   }
 }
 
-const customerOptions = customers.map((c) => ({
-  value: c.id,
-  label: c.name,
-  sub: `${c.roomNumber} / ${c.checkInDate}`,
-}));
-
 const courseOptions = courses.map((c) => ({
   value: c.id,
   label: c.name,
@@ -67,7 +62,8 @@ const courseOptions = courses.map((c) => ({
 }));
 
 export function AllergenCheckPage() {
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number>(customers[0].id);
+  const [customers] = useCustomers();
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number>(customers[0]?.id ?? 0);
   const [selectedCourseId, setSelectedCourseId] = useState<number>(courses[0].id);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [allergenListOpen, setAllergenListOpen] = useState(false);
@@ -76,11 +72,18 @@ export function AllergenCheckPage() {
   const mandatoryItems = allergen28Items.filter((a) => a.category === "義務表示");
   const recommendedItems = allergen28Items.filter((a) => a.category === "推奨表示");
 
-  const customer = customers.find((c) => c.id === selectedCustomerId)!;
+  const customerOptions = customers.map((c) => ({
+    value: c.id,
+    label: c.name,
+    sub: `${c.roomNumber} / ${c.checkInDate}`,
+  }));
+
+  const customer = customers.find((c) => c.id === selectedCustomerId);
   const course = courses.find((c) => c.id === selectedCourseId)!;
+  const customerAllergens = customer?.allergens ?? [];
 
   const dishResults = course.dishes.map((dish) => {
-    const result = checkDish(dish, customer.allergens);
+    const result = checkDish(dish, customerAllergens);
     return { dish, ...result };
   });
 
@@ -133,7 +136,7 @@ export function AllergenCheckPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 text-sm">
           <span className="text-text-muted">アレルゲン:</span>
           <div className="flex flex-wrap gap-1.5">
-            {customer.allergens.map((a) => (
+            {customerAllergens.map((a) => (
               <span
                 key={a}
                 className="px-2 py-0.5 bg-ng-bg text-ng border border-ng-border rounded text-xs font-semibold"
@@ -142,8 +145,8 @@ export function AllergenCheckPage() {
               </span>
             ))}
           </div>
-          <span className="text-text-muted ml-2">条件: {customer.condition}</span>
-          <span className="text-text-muted">コンタミ: {customer.contamination}</span>
+          <span className="text-text-muted ml-2">条件: {customer?.condition ?? "—"}</span>
+          <span className="text-text-muted">コンタミ: {customer?.contamination ?? "—"}</span>
         </div>
       </div>
 
@@ -210,7 +213,7 @@ export function AllergenCheckPage() {
                   {/* Mobile card layout */}
                   <div className="md:hidden divide-y divide-border-light">
                     {dish.linkedIngredients.map((ing) => {
-                      const ingResult = checkIngredient(ing, customer.allergens);
+                      const ingResult = checkIngredient(ing, customerAllergens);
                       return (
                         <div key={ing.id} className="px-3 py-3 space-y-1.5">
                           <div className="flex items-center justify-between">
@@ -273,7 +276,7 @@ export function AllergenCheckPage() {
                     </thead>
                     <tbody>
                       {dish.linkedIngredients.map((ing) => {
-                        const ingResult = checkIngredient(ing, customer.allergens);
+                        const ingResult = checkIngredient(ing, customerAllergens);
                         return (
                           <tr
                             key={ing.id}

@@ -10,6 +10,7 @@ export function MobileBottomNav({ steps }: Props) {
   const navigate = useNavigate();
   const currentIndex = steps.findIndex((s) => s.path === location.pathname);
   const isAllergenPage = location.pathname === "/allergens";
+  const isCustomerPage = location.pathname.startsWith("/customers");
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-primary-dark safe-area-bottom md:hidden animate-slide-up">
@@ -44,6 +45,27 @@ export function MobileBottomNav({ steps }: Props) {
             </button>
           );
         })}
+        {/* Utility: 顧客管理 */}
+        <button
+          onClick={() => navigate("/customers")}
+          className={`flex-1 flex flex-col items-center justify-center min-h-[56px] gap-1 transition-colors cursor-pointer ${
+            isCustomerPage ? "bg-white/10 text-white" : "text-white/35"
+          }`}
+        >
+          <svg
+            className="w-5 h-5 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span className="text-[10px] truncate max-w-full px-1">顧客</span>
+        </button>
         {/* Utility: アレルゲン管理 */}
         <button
           onClick={() => navigate("/allergens")}

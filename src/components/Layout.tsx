@@ -9,6 +9,7 @@ type Props = {
 
 const UTILITY_TITLES: Record<string, string> = {
   "/allergens": "アレルゲン管理",
+  "/customers": "顧客管理",
 };
 
 export function Layout({ steps }: Props) {
@@ -21,7 +22,9 @@ export function Layout({ steps }: Props) {
   const stepNumber = isStepPage ? currentIndex + 1 : 0;
   const isFirst = currentIndex <= 0;
   const isLast = currentIndex === steps.length - 1;
-  const utilityTitle = UTILITY_TITLES[location.pathname];
+  const utilityTitle = Object.entries(UTILITY_TITLES).find(([prefix]) =>
+    location.pathname.startsWith(prefix),
+  )?.[1];
 
   return (
     <div className="flex flex-col h-screen md:flex-row md:overflow-hidden">

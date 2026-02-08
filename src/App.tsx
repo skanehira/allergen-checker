@@ -5,6 +5,7 @@ import { RecipeLinkPage } from "./pages/RecipeLinkPage";
 import { CoursePage } from "./pages/CoursePage";
 import { AllergenCheckPage } from "./pages/AllergenCheckPage";
 import { CustomAllergenPage } from "./pages/CustomAllergenPage";
+import { CustomerListPage, CustomerFormPage } from "./pages/CustomerPage";
 
 export const STEPS = [
   { id: 1, label: "仕入れ取込", path: "/import" },
@@ -23,6 +24,9 @@ function App() {
           <Route path="/course" element={<CoursePage />} />
           <Route path="/check" element={<AllergenCheckPage />} />
           <Route path="/allergens" element={<CustomAllergenPage />} />
+          <Route path="/customers" element={<CustomerListPage />} />
+          <Route path="/customers/new" element={<CustomerFormPage />} />
+          <Route path="/customers/edit/:id" element={<CustomerFormPage />} />
           <Route path="/normalize" element={<Navigate to="/import" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/import" replace />} />

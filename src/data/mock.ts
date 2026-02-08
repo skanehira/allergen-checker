@@ -49,6 +49,8 @@ export type Customer = {
   contamination: string;
   checkInDate: string;
   roomNumber: string;
+  notes: string;
+  originalText: string;
 };
 
 export type Course = {
@@ -294,6 +296,8 @@ export const customers: Customer[] = [
     contamination: "不可",
     checkInDate: "2026-02-07",
     roomNumber: "松の間 301",
+    notes: "",
+    originalText: "",
   },
   {
     id: 2,
@@ -303,6 +307,8 @@ export const customers: Customer[] = [
     contamination: "要確認",
     checkInDate: "2026-02-08",
     roomNumber: "竹の間 205",
+    notes: "",
+    originalText: "",
   },
   {
     id: 3,
@@ -312,6 +318,8 @@ export const customers: Customer[] = [
     contamination: "不可",
     checkInDate: "2026-02-09",
     roomNumber: "梅の間 102",
+    notes: "",
+    originalText: "",
   },
 ];
 
