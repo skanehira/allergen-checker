@@ -1,5 +1,6 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
+import { MobileBottomNav } from "./MobileBottomNav";
 import type { Step } from "./Sidebar";
 
 type Props = {
@@ -17,19 +18,23 @@ export function Layout({ steps }: Props) {
   const isLast = currentIndex === steps.length - 1;
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar steps={steps} />
+    <div className="flex flex-col h-screen md:flex-row md:overflow-hidden">
+      <div className="hidden md:flex shrink-0">
+        <Sidebar steps={steps} />
+      </div>
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="shrink-0 bg-bg-card border-b border-border px-8 py-4 flex items-center justify-between">
+        <header className="shrink-0 bg-bg-card border-b border-border px-4 py-3 md:px-8 md:py-4 flex items-center justify-between">
           <div>
             <p className="text-[11px] text-text-muted tracking-wider mb-0.5">
               STEP {stepNumber} / {steps.length}
             </p>
-            <h2 className="font-display text-xl font-medium tracking-wide">{currentStep.label}</h2>
+            <h2 className="font-display text-base md:text-xl font-medium tracking-wide">
+              {currentStep.label}
+            </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             {!isFirst && (
               <button
                 onClick={() => navigate(steps[currentIndex - 1].path)}
@@ -50,12 +55,14 @@ export function Layout({ steps }: Props) {
         </header>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto px-8 py-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 pb-24 md:px-8 md:py-6 md:pb-6">
           <div key={location.pathname} className="animate-fade-in">
             <Outlet />
           </div>
         </main>
       </div>
+
+      <MobileBottomNav steps={steps} />
     </div>
   );
 }

@@ -83,7 +83,7 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
   }
 
   return (
-    <div ref={containerRef} className="relative inline-flex items-center">
+    <div ref={containerRef} className="relative flex items-center sm:inline-flex">
       <span className="text-text-muted text-sm mr-2 shrink-0">{label}:</span>
       <div className="relative">
         <input
@@ -100,7 +100,7 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
           }}
           onKeyDown={handleKeyDown}
           placeholder="検索..."
-          className={`border border-border rounded-lg px-3 py-1.5 pr-7 text-sm bg-white hover:border-primary/40 transition-colors min-w-[200px] ${
+          className={`border border-border rounded-lg px-3 py-1.5 pr-7 text-sm bg-white hover:border-primary/40 transition-colors w-full sm:min-w-[200px] sm:w-auto ${
             open ? "border-primary/50 shadow-card" : ""
           }`}
         />
@@ -110,7 +110,7 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
       </div>
 
       {open && (
-        <div className="absolute top-full right-0 mt-1 w-72 bg-bg-card border border-border rounded-xl shadow-elevated z-50 overflow-hidden animate-fade-in">
+        <div className="absolute top-full left-0 sm:right-0 sm:left-auto mt-1 w-full sm:w-72 bg-bg-card border border-border rounded-xl shadow-elevated z-50 overflow-hidden animate-fade-in">
           <ul ref={listRef} className="max-h-56 overflow-y-auto py-1">
             {filtered.length === 0 && (
               <li className="px-4 py-3 text-sm text-text-muted text-center">該当なし</li>

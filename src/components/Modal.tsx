@@ -30,7 +30,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="bg-bg-card rounded-xl shadow-elevated border border-border w-full max-w-2xl mx-4 animate-fade-in">
+      <div className="bg-bg-card rounded-xl shadow-elevated border border-border w-full max-w-2xl mx-3 md:mx-4 max-h-[85vh] overflow-y-auto animate-fade-in">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h3 className="font-display text-lg font-medium">{title}</h3>
           <button

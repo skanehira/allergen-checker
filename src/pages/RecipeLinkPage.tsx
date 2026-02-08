@@ -194,7 +194,7 @@ export function RecipeLinkPage() {
       </div>
 
       {/* Two-panel layout */}
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Left: Available */}
         <div className="bg-bg-card border border-border rounded-xl overflow-hidden shadow-card">
           <div className="px-4 py-3 border-b border-border bg-bg-cream/40">
@@ -216,7 +216,7 @@ export function RecipeLinkPage() {
             {filtered.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center justify-between px-4 py-2.5 hover:bg-bg-cream/30 transition-colors"
+                className="flex items-center justify-between px-4 py-3 md:py-2.5 hover:bg-bg-cream/30 transition-colors"
               >
                 <div>
                   <span className="text-sm">{item.name}</span>
@@ -271,7 +271,8 @@ export function RecipeLinkPage() {
             })}
             {linked.length === 0 && (
               <div className="px-4 py-8 text-center text-sm text-text-muted">
-                左のリストから食材を追加してください
+                <span className="md:hidden">上のリストから食材を追加してください</span>
+                <span className="hidden md:inline">左のリストから食材を追加してください</span>
               </div>
             )}
           </div>

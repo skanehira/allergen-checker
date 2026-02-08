@@ -194,7 +194,7 @@ export function CoursePage() {
       </div>
 
       {/* Two-panel layout */}
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Left: Available Recipes */}
         <div className="bg-bg-card border border-border rounded-xl overflow-hidden shadow-card">
           <div className="px-4 py-3 border-b border-border bg-bg-cream/40">
@@ -261,14 +261,14 @@ export function CoursePage() {
                   <button
                     onClick={() => moveRecipe(dish.id, "up")}
                     disabled={idx === 0}
-                    className="px-1.5 py-0.5 text-xs text-text-muted hover:text-text-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="px-2.5 py-1.5 md:px-1.5 md:py-0.5 text-xs text-text-muted hover:text-text-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     ↑
                   </button>
                   <button
                     onClick={() => moveRecipe(dish.id, "down")}
                     disabled={idx === (selectedCourse?.dishes.length ?? 0) - 1}
-                    className="px-1.5 py-0.5 text-xs text-text-muted hover:text-text-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="px-2.5 py-1.5 md:px-1.5 md:py-0.5 text-xs text-text-muted hover:text-text-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     ↓
                   </button>
@@ -283,7 +283,8 @@ export function CoursePage() {
             ))}
             {(selectedCourse?.dishes.length ?? 0) === 0 && (
               <li className="px-4 py-8 text-center text-sm text-text-muted">
-                左のリストからレシピを追加してください
+                <span className="md:hidden">上のリストからレシピを追加してください</span>
+                <span className="hidden md:inline">左のリストからレシピを追加してください</span>
               </li>
             )}
           </ul>

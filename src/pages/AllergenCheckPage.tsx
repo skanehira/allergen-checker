@@ -101,7 +101,7 @@ export function AllergenCheckPage() {
     <div className="space-y-6">
       {/* 選択エリア */}
       <div className="bg-bg-card border border-border rounded-xl p-5 shadow-card space-y-4">
-        <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4 sm:items-center">
           <SearchableSelect
             label="顧客"
             options={customerOptions}
@@ -128,7 +128,7 @@ export function AllergenCheckPage() {
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 text-sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 text-sm">
           <span className="text-text-muted">アレルゲン:</span>
           <div className="flex flex-wrap gap-1.5">
             {customer.allergens.map((a) => (
@@ -146,7 +146,7 @@ export function AllergenCheckPage() {
       </div>
 
       {/* サマリーチップ */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-2 md:gap-3">
         <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-ng-bg border border-ng-border text-ng text-sm font-semibold">
           NG <span className="text-lg">{counts.NG}</span>件
         </div>
@@ -169,7 +169,7 @@ export function AllergenCheckPage() {
             >
               <button
                 onClick={() => toggle(dish.id)}
-                className="w-full flex items-center justify-between px-5 py-4 text-left cursor-pointer hover:bg-bg-cream/30 transition-colors"
+                className="w-full flex items-center justify-between px-3 py-3 md:px-5 md:py-4 text-left cursor-pointer hover:bg-bg-cream/30 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <span
@@ -205,7 +205,54 @@ export function AllergenCheckPage() {
 
               {isOpen && (
                 <div className="border-t border-border animate-fade-in">
-                  <table className="w-full">
+                  {/* Mobile card layout */}
+                  <div className="md:hidden divide-y divide-border-light">
+                    {dish.linkedIngredients.map((ing) => {
+                      const ingResult = checkIngredient(ing, customer.allergens);
+                      return (
+                        <div key={ing.id} className="px-3 py-3 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">{ing.name}</span>
+                            <StatusBadge value={ingResult.judgment} />
+                          </div>
+                          <div className="text-xs text-text-muted">{ing.category}</div>
+                          <div className="text-sm">
+                            {ing.allergens.length > 0 ? (
+                              <span className="flex flex-wrap gap-1 items-center">
+                                {ing.allergens.map((a) =>
+                                  ingResult.matchedAllergens.includes(a) ? (
+                                    <span
+                                      key={a}
+                                      className="px-1.5 py-0.5 bg-ng-bg text-ng border border-ng-border rounded text-[11px] font-semibold"
+                                    >
+                                      {a}
+                                    </span>
+                                  ) : (
+                                    <span key={a} className="text-text-secondary text-xs">
+                                      {a}
+                                    </span>
+                                  ),
+                                )}
+                                {ing.allergenUnknown && (
+                                  <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
+                                    不明
+                                  </span>
+                                )}
+                              </span>
+                            ) : ing.allergenUnknown ? (
+                              <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
+                                不明
+                              </span>
+                            ) : (
+                              <span className="text-text-muted text-xs">—</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Desktop table layout */}
+                  <table className="w-full hidden md:table">
                     <thead>
                       <tr className="bg-bg-cream/40">
                         <th className="py-2.5 px-5 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-left">

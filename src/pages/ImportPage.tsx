@@ -116,12 +116,12 @@ export function ImportPage() {
           ファイルアップロード
         </h3>
 
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide md:overflow-visible">
           {filters.map((f) => (
             <button
               key={f}
               onClick={() => setActive(f)}
-              className={`px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 cursor-pointer ${
+              className={`shrink-0 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 cursor-pointer ${
                 active === f
                   ? "bg-primary text-white shadow-card"
                   : "bg-bg-card text-text-secondary border border-border hover:border-primary/30"
@@ -138,7 +138,7 @@ export function ImportPage() {
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-14 text-center transition-all duration-300 cursor-pointer group ${
+          className={`border-2 border-dashed rounded-xl p-6 md:p-14 text-center transition-all duration-300 cursor-pointer group ${
             dragging
               ? "border-primary bg-primary/5"
               : "border-border bg-bg-cream/60 hover:border-primary/30 hover:bg-bg-cream"
@@ -174,7 +174,57 @@ export function ImportPage() {
         </div>
 
         <div className="bg-bg-card rounded-xl border border-border overflow-hidden shadow-card">
-          <table className="w-full">
+          {/* Mobile card layout */}
+          <div className="md:hidden divide-y divide-border-light">
+            {displayed.map((row) => (
+              <div key={row.id} className="px-4 py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium truncate mr-2">{row.fileName}</span>
+                  <StatusBadge value={row.status} />
+                </div>
+                <div className="flex items-center gap-3 text-xs text-text-muted">
+                  <span>#{row.id}</span>
+                  <span>{row.fileType}</span>
+                  <span>抽出: {row.extractedCount || "—"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {row.status === "抽出済み" && (
+                    <button
+                      onClick={() => completeItem(row.id)}
+                      className="text-xs text-ok hover:text-ok/80 font-medium cursor-pointer"
+                    >
+                      完了 ✓
+                    </button>
+                  )}
+                  {row.status === "OCR中" && (
+                    <button className="text-xs text-text-muted hover:text-text-secondary font-medium cursor-pointer">
+                      再実行
+                    </button>
+                  )}
+                  {row.status === "エラー" && (
+                    <button className="text-xs text-ng hover:text-ng/80 font-medium cursor-pointer">
+                      再試行
+                    </button>
+                  )}
+                  {row.status !== "取込完了" && row.status !== "抽出済み" && (
+                    <button
+                      onClick={() => cancelItem(row.id)}
+                      className="text-xs text-text-muted hover:text-ng font-medium cursor-pointer"
+                    >
+                      キャンセル
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {displayed.length === 0 && (
+              <div className="py-8 text-center text-sm text-text-muted">
+                該当するファイルがありません
+              </div>
+            )}
+          </div>
+          {/* Desktop table layout */}
+          <table className="w-full hidden md:table">
             <thead>
               <tr className="border-b border-border bg-bg-cream/40">
                 {["ID", "ファイル名", "種別", "抽出件数", "状態", "操作"].map((h, i) => (
@@ -253,15 +303,15 @@ export function ImportPage() {
         <h3 className="font-display text-base font-medium text-text-secondary">正規化確認</h3>
 
         {/* Meta */}
-        <div className="flex items-center gap-6 text-sm text-text-secondary bg-bg-card border border-border rounded-lg px-5 py-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6 text-sm text-text-secondary bg-bg-card border border-border rounded-lg px-5 py-3">
           <span>
             取込ID: <strong className="text-text">101</strong>
           </span>
-          <span className="text-border">|</span>
+          <span className="text-border hidden sm:inline">|</span>
           <span>
             出典: <strong className="text-text">規格書</strong>
           </span>
-          <span className="text-border">|</span>
+          <span className="text-border hidden sm:inline">|</span>
           <span>
             更新日: <strong className="text-text">2026-02-07</strong>
           </span>
@@ -285,7 +335,46 @@ export function ImportPage() {
 
         {/* Table */}
         <div className="bg-bg-card rounded-xl border border-border overflow-hidden shadow-card">
-          <table className="w-full">
+          {/* Mobile card layout */}
+          <div className="md:hidden divide-y divide-border-light">
+            {normItems.map((row) => (
+              <div key={row.id} className="px-4 py-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{row.original}</span>
+                  <StatusBadge value={row.status} />
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium text-primary">{row.normalized}</span>
+                  {row.original !== row.normalized && (
+                    <span className="text-[11px] text-text-muted ml-2">← 変換</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <StatusBadge value={row.allergen} />
+                  <span className="text-text-muted">{row.sourceFile}</span>
+                </div>
+                <div>
+                  {row.status === "要確認" ? (
+                    <button
+                      onClick={() => confirm(row.id)}
+                      className="text-xs font-medium text-ok hover:text-ok/80 cursor-pointer"
+                    >
+                      確定 ✓
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => revert(row.id)}
+                      className="text-xs font-medium text-text-muted hover:text-text-secondary cursor-pointer"
+                    >
+                      戻す
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Desktop table layout */}
+          <table className="w-full hidden md:table">
             <thead>
               <tr className="border-b border-border bg-bg-cream/40">
                 {["#", "原文名", "正規化候補", "アレルゲン", "出典ファイル", "状態", "操作"].map(
@@ -345,7 +434,7 @@ export function ImportPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
             onClick={() => setReviewOpen(true)}
             className="px-5 py-2.5 text-sm border border-border rounded-lg text-text-secondary hover:bg-bg-cream transition-colors cursor-pointer"
