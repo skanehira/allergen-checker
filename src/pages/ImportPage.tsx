@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import { importQueue, normalizationItems } from "../data/mock";
-import type { ImportQueueItem, FileType, NormalizationItem } from "../data/mock";
+import { importQueue, importedIngredients } from "../data/mock";
+import type { ImportQueueItem, FileType, ImportedIngredient, RawMaterial } from "../data/mock";
 import { StatusBadge } from "../components/StatusBadge";
-import { Modal } from "../components/Modal";
+import { AllergenChips } from "../components/AllergenChips";
+import { IngredientDetailModal } from "../components/IngredientDetailModal";
 
 const filters = ["すべて", "PDF", "画像", "CSV", "Excel"] as const;
 type Filter = (typeof filters)[number];
@@ -32,17 +33,16 @@ export function ImportPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 正規化確認
-  const [normItems, setNormItems] = useState<NormalizationItem[]>(normalizationItems);
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [reviewSent, setReviewSent] = useState(false);
+  const [ingredients, setIngredients] = useState<ImportedIngredient[]>(importedIngredients);
+  const [detailItem, setDetailItem] = useState<ImportedIngredient | null>(null);
+  const [dbSaved, setDbSaved] = useState(false);
 
   const displayed =
     active === "すべて"
       ? queue
       : queue.filter((item) => item.fileType === filterToFileType[active]);
 
-  const pendingCount = normItems.filter((i) => i.status === "要確認").length;
-  const pendingItems = normItems.filter((i) => i.status === "要確認");
+  const pendingCount = ingredients.filter((i) => i.status === "要確認").length;
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
@@ -92,20 +92,30 @@ export function ImportPage() {
     setQueue((prev) => prev.filter((item) => item.id !== id));
   }
 
-  function confirm(id: number) {
-    setNormItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: "確定" as const } : i)));
+  function collectAllergens(materials: RawMaterial[]): string[] {
+    return [...new Set(materials.flatMap((m) => m.allergens))];
   }
 
-  function revert(id: number) {
-    setNormItems((prev) =>
+  function confirmIngredient(id: number) {
+    setIngredients((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, status: "確定" as const } : i)),
+    );
+  }
+
+  function revertIngredient(id: number) {
+    setIngredients((prev) =>
       prev.map((i) => (i.id === id ? { ...i, status: "要確認" as const } : i)),
     );
   }
 
-  function sendReview() {
-    setReviewOpen(false);
-    setReviewSent(true);
-    setTimeout(() => setReviewSent(false), 3000);
+  function updateIngredient(updated: ImportedIngredient) {
+    setIngredients((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    setDetailItem(updated);
+  }
+
+  function saveToDb() {
+    setDbSaved(true);
+    setTimeout(() => setDbSaved(false), 3000);
   }
 
   return (
@@ -302,34 +312,19 @@ export function ImportPage() {
       <section className="space-y-6">
         <h3 className="font-display text-base font-medium text-text-secondary">正規化確認</h3>
 
-        {/* Meta */}
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6 text-sm text-text-secondary bg-bg-card border border-border rounded-lg px-5 py-3">
-          <span>
-            取込ID: <strong className="text-text">101</strong>
-          </span>
-          <span className="text-border hidden sm:inline">|</span>
-          <span>
-            出典: <strong className="text-text">規格書</strong>
-          </span>
-          <span className="text-border hidden sm:inline">|</span>
-          <span>
-            更新日: <strong className="text-text">2026-02-07</strong>
-          </span>
-        </div>
-
         {/* Summary */}
         {pendingCount > 0 && (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-caution-bg border border-caution-border rounded-lg text-sm text-caution">
             <span className="text-base">⚠</span>
-            不明・未確定: <strong>{pendingCount}件</strong>
+            未確定: <strong>{pendingCount}件</strong>
           </div>
         )}
 
-        {/* Success message */}
-        {reviewSent && (
+        {/* DB saved message */}
+        {dbSaved && (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-ok-bg border border-ok-border rounded-lg text-sm text-ok animate-fade-in">
             <span className="text-base">✓</span>
-            差分レビュー依頼を送信しました
+            DBに反映しました
           </div>
         )}
 
@@ -337,47 +332,55 @@ export function ImportPage() {
         <div className="bg-bg-card rounded-xl border border-border overflow-hidden shadow-card">
           {/* Mobile card layout */}
           <div className="md:hidden divide-y divide-border-light">
-            {normItems.map((row) => (
-              <div key={row.id} className="px-4 py-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{row.original}</span>
-                  <StatusBadge value={row.status} />
+            {ingredients.map((row) => {
+              const allergens = collectAllergens(row.rawMaterials);
+              return (
+                <div
+                  key={row.id}
+                  className="px-4 py-3 space-y-2 cursor-pointer hover:bg-bg-cream/30 transition-colors"
+                  onClick={() => setDetailItem(row)}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{row.name}</span>
+                    <StatusBadge value={row.status} />
+                  </div>
+                  <div className="text-xs text-text-muted">{row.sourceFile}</div>
+                  <div className="text-xs text-text-secondary">
+                    {row.rawMaterials.map((m) => m.name).join(", ")}
+                  </div>
+                  <AllergenChips allergens={allergens} />
+                  <div className="flex items-center gap-2 pt-1">
+                    {row.status === "要確認" ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          confirmIngredient(row.id);
+                        }}
+                        className="text-xs font-medium text-ok hover:text-ok/80 cursor-pointer"
+                      >
+                        確定 ✓
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          revertIngredient(row.id);
+                        }}
+                        className="text-xs font-medium text-text-muted hover:text-text-secondary cursor-pointer"
+                      >
+                        戻す
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="text-sm">
-                  <span className="font-medium text-primary">{row.normalized}</span>
-                  {row.original !== row.normalized && (
-                    <span className="text-[11px] text-text-muted ml-2">← 変換</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 text-xs">
-                  <StatusBadge value={row.allergen} />
-                  <span className="text-text-muted">{row.sourceFile}</span>
-                </div>
-                <div>
-                  {row.status === "要確認" ? (
-                    <button
-                      onClick={() => confirm(row.id)}
-                      className="text-xs font-medium text-ok hover:text-ok/80 cursor-pointer"
-                    >
-                      確定 ✓
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => revert(row.id)}
-                      className="text-xs font-medium text-text-muted hover:text-text-secondary cursor-pointer"
-                    >
-                      戻す
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {/* Desktop table layout */}
           <table className="w-full hidden md:table">
             <thead>
               <tr className="border-b border-border bg-bg-cream/40">
-                {["#", "原文名", "正規化候補", "アレルゲン", "出典ファイル", "状態", "操作"].map(
+                {["出典ファイル", "仕入れ食材名", "原材料", "アレルゲン", "状態", "操作"].map(
                   (h) => (
                     <th
                       key={h}
@@ -390,45 +393,54 @@ export function ImportPage() {
               </tr>
             </thead>
             <tbody>
-              {normItems.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b border-border-light last:border-0 hover:bg-bg-cream/30 transition-colors"
-                >
-                  <td className="py-3 px-4 text-sm text-text-muted tabular-nums">{row.id}</td>
-                  <td className="py-3 px-4 text-sm">{row.original}</td>
-                  <td className="py-3 px-4 text-sm">
-                    <span className="font-medium text-primary">{row.normalized}</span>
-                    {row.original !== row.normalized && (
-                      <span className="text-[11px] text-text-muted ml-2">← 変換</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    <StatusBadge value={row.allergen} />
-                  </td>
-                  <td className="py-3 px-4 text-sm text-text-muted">{row.sourceFile}</td>
-                  <td className="py-3 px-4">
-                    <StatusBadge value={row.status} />
-                  </td>
-                  <td className="py-3 px-4">
-                    {row.status === "要確認" ? (
-                      <button
-                        onClick={() => confirm(row.id)}
-                        className="text-xs font-medium text-ok hover:text-ok/80 cursor-pointer"
-                      >
-                        確定 ✓
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => revert(row.id)}
-                        className="text-xs font-medium text-text-muted hover:text-text-secondary cursor-pointer"
-                      >
-                        戻す
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {ingredients.map((row) => {
+                const allergens = collectAllergens(row.rawMaterials);
+                const rawNames = row.rawMaterials.map((m) => m.name).join(", ");
+                return (
+                  <tr
+                    key={row.id}
+                    className="border-b border-border-light last:border-0 hover:bg-bg-cream/30 transition-colors cursor-pointer"
+                    onClick={() => setDetailItem(row)}
+                  >
+                    <td className="py-3 px-4 text-sm text-text-muted">{row.sourceFile}</td>
+                    <td className="py-3 px-4 text-sm font-medium">{row.name}</td>
+                    <td className="py-3 px-4 text-sm text-text-secondary max-w-[200px]">
+                      <span className="line-clamp-2" title={rawNames}>
+                        {rawNames}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <AllergenChips allergens={allergens} />
+                    </td>
+                    <td className="py-3 px-4">
+                      <StatusBadge value={row.status} />
+                    </td>
+                    <td className="py-3 px-4">
+                      {row.status === "要確認" ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmIngredient(row.id);
+                          }}
+                          className="text-xs font-medium text-ok hover:text-ok/80 cursor-pointer"
+                        >
+                          確定 ✓
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            revertIngredient(row.id);
+                          }}
+                          className="text-xs font-medium text-text-muted hover:text-text-secondary cursor-pointer"
+                        >
+                          戻す
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -436,72 +448,21 @@ export function ImportPage() {
         {/* Actions */}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
-            onClick={() => setReviewOpen(true)}
-            className="px-5 py-2.5 text-sm border border-border rounded-lg text-text-secondary hover:bg-bg-cream transition-colors cursor-pointer"
-          >
-            差分レビュー依頼
-          </button>
-          <button
+            onClick={saveToDb}
             className="px-5 py-2.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-light transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             disabled={pendingCount > 0}
           >
-            承認してDB反映
+            DB反映
           </button>
         </div>
 
-        {/* Review Modal */}
-        <Modal open={reviewOpen} onClose={() => setReviewOpen(false)} title="差分レビュー依頼">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 px-3 py-2 bg-caution-bg border border-caution-border rounded-lg text-sm text-caution">
-              <span>⚠</span>
-              要確認項目: <strong>{pendingItems.length}件</strong>
-            </div>
-
-            <div className="bg-bg-cream/50 rounded-lg border border-border-light overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-bg-cream/60">
-                    <th className="py-2 px-3 text-left text-[11px] font-semibold text-text-muted uppercase">
-                      原文名
-                    </th>
-                    <th className="py-2 px-3 text-left text-[11px] font-semibold text-text-muted uppercase">
-                      正規化候補
-                    </th>
-                    <th className="py-2 px-3 text-left text-[11px] font-semibold text-text-muted uppercase">
-                      アレルゲン
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingItems.map((item) => (
-                    <tr key={item.id} className="border-b border-border-light last:border-0">
-                      <td className="py-2 px-3">{item.original}</td>
-                      <td className="py-2 px-3 font-medium text-primary">{item.normalized}</td>
-                      <td className="py-2 px-3">
-                        <StatusBadge value={item.allergen} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={() => setReviewOpen(false)}
-                className="px-4 py-2 text-sm border border-border rounded-lg text-text-secondary hover:bg-bg-cream transition-colors cursor-pointer"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={sendReview}
-                className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
-              >
-                レビュー依頼を送信
-              </button>
-            </div>
-          </div>
-        </Modal>
+        {/* Detail Modal */}
+        <IngredientDetailModal
+          item={detailItem}
+          open={detailItem !== null}
+          onClose={() => setDetailItem(null)}
+          onUpdate={updateIngredient}
+        />
       </section>
     </div>
   );

@@ -26,6 +26,21 @@ export type NormalizationItem = {
   sourceFile: string;
 };
 
+// ─── 仕入れ食材の原材料・アレルゲン管理 ───
+
+export type RawMaterial = {
+  name: string;
+  allergens: string[];
+};
+
+export type ImportedIngredient = {
+  id: number;
+  sourceFile: string;
+  name: string;
+  rawMaterials: RawMaterial[];
+  status: NormStatus;
+};
+
 export type Ingredient = {
   id: number;
   name: string;
