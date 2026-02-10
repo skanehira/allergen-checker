@@ -9,8 +9,8 @@ import { CustomerListPage, CustomerFormPage } from "./pages/CustomerPage";
 
 export const STEPS = [
   { id: 1, label: "仕入れ取込", path: "/import" },
-  { id: 2, label: "レシピ作成", path: "/recipe" },
-  { id: 3, label: "コース作成", path: "/course" },
+  { id: 2, label: "料理登録", path: "/recipe" },
+  { id: 3, label: "コース登録", path: "/course" },
   { id: 4, label: "アレルゲンチェック", path: "/check" },
 ];
 

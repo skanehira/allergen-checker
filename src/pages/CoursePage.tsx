@@ -148,7 +148,7 @@ export function CoursePage() {
 
         <div className="bg-bg-card border border-border rounded-xl p-6 shadow-card max-w-lg">
           <h3 className="font-display text-base font-medium text-text-secondary mb-4">
-            新規コース作成
+            新規コース登録
           </h3>
           <div className="space-y-4">
             <div>
