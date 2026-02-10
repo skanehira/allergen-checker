@@ -1,70 +1,18 @@
 import { useState } from "react";
-import { courses, allergen28Items } from "../data/mock";
-import type { Ingredient, Recipe, Judgment } from "../data/mock";
+import { allergen28Items } from "../data/mock";
 import { StatusBadge } from "../components/StatusBadge";
 import { SearchableSelect } from "../components/SearchableSelect";
 import { Modal } from "../components/Modal";
 import { useCustomAllergens } from "../hooks/useCustomAllergens";
 import { useCustomers } from "../hooks/useCustomers";
-
-type IngredientCheckResult = {
-  judgment: Judgment;
-  matchedAllergens: string[];
-};
-
-type DishCheckResult = {
-  judgment: Judgment;
-  matchedAllergens: string[];
-  hasUnknown: boolean;
-};
-
-function checkIngredient(
-  ingredient: Ingredient,
-  customerAllergens: string[],
-): IngredientCheckResult {
-  const matchedAllergens = ingredient.allergens.filter((a) => customerAllergens.includes(a));
-  let judgment: Judgment;
-  if (ingredient.allergenUnknown) {
-    judgment = matchedAllergens.length > 0 ? "NG" : "要確認";
-  } else {
-    judgment = matchedAllergens.length > 0 ? "NG" : "OK";
-  }
-  return { judgment, matchedAllergens };
-}
-
-function checkDish(recipe: Recipe, customerAllergens: string[]): DishCheckResult {
-  const results = recipe.linkedIngredients.map((i) => checkIngredient(i, customerAllergens));
-  const allMatched = [...new Set(results.flatMap((r) => r.matchedAllergens))];
-  const hasUnknown = recipe.linkedIngredients.some((i) => i.allergenUnknown);
-  const judgments = results.map((r) => r.judgment);
-  let judgment: Judgment;
-  if (judgments.includes("NG")) judgment = "NG";
-  else if (judgments.includes("要確認")) judgment = "要確認";
-  else judgment = "OK";
-  return { judgment, matchedAllergens: allMatched, hasUnknown };
-}
-
-function judgmentIcon(j: Judgment) {
-  switch (j) {
-    case "NG":
-      return "✕";
-    case "要確認":
-      return "△";
-    case "OK":
-      return "○";
-  }
-}
-
-const courseOptions = courses.map((c) => ({
-  value: c.id,
-  label: c.name,
-  sub: `${c.dishes.length} 品`,
-}));
+import { useCourses } from "../hooks/useCourses";
+import { checkIngredient, checkDish, judgmentIcon } from "../utils/allergenCheck";
 
 export function AllergenCheckPage() {
   const [customers] = useCustomers();
+  const [courseList] = useCourses();
   const [selectedCustomerId, setSelectedCustomerId] = useState<number>(customers[0]?.id ?? 0);
-  const [selectedCourseId, setSelectedCourseId] = useState<number>(courses[0].id);
+  const [selectedCourseId, setSelectedCourseId] = useState<number>(courseList[0]?.id ?? 0);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [allergenListOpen, setAllergenListOpen] = useState(false);
   const { items: customAllergens } = useCustomAllergens();
@@ -78,11 +26,17 @@ export function AllergenCheckPage() {
     sub: `${c.roomName} / ${c.checkInDate}`,
   }));
 
+  const courseOptions = courseList.map((c) => ({
+    value: c.id,
+    label: c.name,
+    sub: `${c.dishes.length} 品`,
+  }));
+
   const customer = customers.find((c) => c.id === selectedCustomerId);
-  const course = courses.find((c) => c.id === selectedCourseId)!;
+  const course = courseList.find((c) => c.id === selectedCourseId);
   const customerAllergens = customer?.allergens ?? [];
 
-  const dishResults = course.dishes.map((dish) => {
+  const dishResults = (course?.dishes ?? []).map((dish) => {
     const result = checkDish(dish, customerAllergens);
     return { dish, ...result };
   });
