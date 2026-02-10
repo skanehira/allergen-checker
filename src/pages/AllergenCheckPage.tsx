@@ -1,16 +1,195 @@
 import { useState } from "react";
 import { allergen28Items } from "../data/mock";
+import type { Course, Ingredient, Judgment, Recipe } from "../data/types";
 import { StatusBadge } from "../components/StatusBadge";
 import { SearchableSelect } from "../components/SearchableSelect";
 import { Modal } from "../components/Modal";
 import { useCustomAllergens } from "../hooks/useCustomAllergens";
 import { useCustomers } from "../hooks/useCustomers";
 import { useCourses } from "../hooks/useCourses";
+import { useRecipes } from "../hooks/useRecipes";
 import { checkIngredient, checkDish, judgmentIcon } from "../utils/allergenCheck";
+
+function resolveDishes(course: Course, allRecipes: Recipe[]): Recipe[] {
+  return course.dishIds
+    .map((id) => allRecipes.find((r) => r.id === id))
+    .filter((r): r is Recipe => r !== undefined);
+}
+
+function AllergenBadges({ allergens }: { allergens: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {allergens.map((a) => (
+        <span
+          key={a}
+          className="px-1.5 py-0.5 bg-ng-bg text-ng border border-ng-border rounded text-[11px] font-semibold"
+        >
+          {a}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function IngredientAllergenCell({
+  ingredient,
+  customerAllergens,
+}: {
+  ingredient: Ingredient;
+  customerAllergens: string[];
+}) {
+  const ingResult = checkIngredient(ingredient, customerAllergens);
+
+  if (ingredient.allergens.length > 0) {
+    return (
+      <span className="flex flex-wrap gap-1 items-center">
+        {ingredient.allergens.map((a) =>
+          ingResult.matchedAllergens.includes(a) ? (
+            <span
+              key={a}
+              className="px-1.5 py-0.5 bg-ng-bg text-ng border border-ng-border rounded text-[11px] font-semibold"
+            >
+              {a}
+            </span>
+          ) : (
+            <span key={a} className="text-text-secondary text-xs">
+              {a}
+            </span>
+          ),
+        )}
+        {ingredient.allergenUnknown && (
+          <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
+            不明
+          </span>
+        )}
+      </span>
+    );
+  }
+
+  if (ingredient.allergenUnknown) {
+    return (
+      <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
+        不明
+      </span>
+    );
+  }
+
+  return <span className="text-text-muted text-xs">—</span>;
+}
+
+function DishAccordion({
+  dish,
+  judgment,
+  matchedAllergens,
+  isOpen,
+  onToggle,
+  customerAllergens,
+}: {
+  dish: Recipe;
+  judgment: Judgment;
+  matchedAllergens: string[];
+  isOpen: boolean;
+  onToggle: () => void;
+  customerAllergens: string[];
+}) {
+  return (
+    <div className="bg-bg-card border border-border rounded-xl overflow-hidden shadow-card">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-3 md:px-5 md:py-4 text-left cursor-pointer hover:bg-bg-cream/30 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className={`text-sm font-bold ${
+              judgment === "NG" ? "text-ng" : judgment === "要確認" ? "text-caution" : "text-ok"
+            }`}
+          >
+            {judgmentIcon(judgment)}
+          </span>
+          <span className="font-display font-medium text-sm">{dish.name}</span>
+          {matchedAllergens.length > 0 && <AllergenBadges allergens={matchedAllergens} />}
+        </div>
+        <div className="flex items-center gap-3">
+          <StatusBadge value={judgment} />
+          <span className="text-text-muted text-xs">{isOpen ? "▲" : "▼"}</span>
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="border-t border-border animate-fade-in">
+          {/* Mobile card layout */}
+          <div className="md:hidden divide-y divide-border-light">
+            {dish.linkedIngredients.map((ing) => {
+              const ingResult = checkIngredient(ing, customerAllergens);
+              return (
+                <div key={ing.id} className="px-3 py-3 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">{ing.name}</span>
+                    <StatusBadge value={ingResult.judgment} />
+                  </div>
+                  <div className="text-xs text-text-muted">{ing.category}</div>
+                  <div className="text-sm">
+                    <IngredientAllergenCell
+                      ingredient={ing}
+                      customerAllergens={customerAllergens}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Desktop table layout */}
+          <table className="w-full hidden md:table">
+            <thead>
+              <tr className="bg-bg-cream/40">
+                <th className="py-2.5 px-5 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-left">
+                  食材名
+                </th>
+                <th className="py-2.5 px-5 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-left">
+                  カテゴリ
+                </th>
+                <th className="py-2.5 px-5 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-left">
+                  含有アレルゲン
+                </th>
+                <th className="py-2.5 px-5 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-center w-24">
+                  判定
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {dish.linkedIngredients.map((ing) => {
+                const ingResult = checkIngredient(ing, customerAllergens);
+                return (
+                  <tr
+                    key={ing.id}
+                    className="border-t border-border-light hover:bg-bg-cream/20 transition-colors"
+                  >
+                    <td className="py-2.5 px-5 text-sm font-medium">{ing.name}</td>
+                    <td className="py-2.5 px-5 text-sm text-text-secondary">{ing.category}</td>
+                    <td className="py-2.5 px-5 text-sm">
+                      <IngredientAllergenCell
+                        ingredient={ing}
+                        customerAllergens={customerAllergens}
+                      />
+                    </td>
+                    <td className="py-2.5 px-5 text-center">
+                      <StatusBadge value={ingResult.judgment} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AllergenCheckPage() {
   const [customers] = useCustomers();
   const [courseList] = useCourses();
+  const [allRecipes] = useRecipes();
   const [selectedCustomerId, setSelectedCustomerId] = useState<number>(customers[0]?.id ?? 0);
   const [selectedCourseId, setSelectedCourseId] = useState<number>(courseList[0]?.id ?? 0);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -26,17 +205,19 @@ export function AllergenCheckPage() {
     sub: `${c.roomName} / ${c.checkInDate}`,
   }));
 
+  const course = courseList.find((c) => c.id === selectedCourseId);
+  const dishes = course ? resolveDishes(course, allRecipes) : [];
+
   const courseOptions = courseList.map((c) => ({
     value: c.id,
     label: c.name,
-    sub: `${c.dishes.length} 品`,
+    sub: `${resolveDishes(c, allRecipes).length} 品`,
   }));
 
   const customer = customers.find((c) => c.id === selectedCustomerId);
-  const course = courseList.find((c) => c.id === selectedCourseId);
   const customerAllergens = customer?.allergens ?? [];
 
-  const dishResults = (course?.dishes ?? []).map((dish) => {
+  const dishResults = dishes.map((dish) => {
     const result = checkDish(dish, customerAllergens);
     return { dish, ...result };
   });
@@ -119,171 +300,17 @@ export function AllergenCheckPage() {
 
       {/* 料理別アコーディオン */}
       <div className="space-y-3">
-        {dishResults.map(({ dish, judgment, matchedAllergens }) => {
-          const isOpen = expanded.has(dish.id);
-          return (
-            <div
-              key={dish.id}
-              className="bg-bg-card border border-border rounded-xl overflow-hidden shadow-card"
-            >
-              <button
-                onClick={() => toggle(dish.id)}
-                className="w-full flex items-center justify-between px-3 py-3 md:px-5 md:py-4 text-left cursor-pointer hover:bg-bg-cream/30 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`text-sm font-bold ${
-                      judgment === "NG"
-                        ? "text-ng"
-                        : judgment === "要確認"
-                          ? "text-caution"
-                          : "text-ok"
-                    }`}
-                  >
-                    {judgmentIcon(judgment)}
-                  </span>
-                  <span className="font-display font-medium text-sm">{dish.name}</span>
-                  {matchedAllergens.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {matchedAllergens.map((a) => (
-                        <span
-                          key={a}
-                          className="px-1.5 py-0.5 bg-ng-bg text-ng border border-ng-border rounded text-[11px] font-semibold"
-                        >
-                          {a}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <StatusBadge value={judgment} />
-                  <span className="text-text-muted text-xs">{isOpen ? "▲" : "▼"}</span>
-                </div>
-              </button>
-
-              {isOpen && (
-                <div className="border-t border-border animate-fade-in">
-                  {/* Mobile card layout */}
-                  <div className="md:hidden divide-y divide-border-light">
-                    {dish.linkedIngredients.map((ing) => {
-                      const ingResult = checkIngredient(ing, customerAllergens);
-                      return (
-                        <div key={ing.id} className="px-3 py-3 space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{ing.name}</span>
-                            <StatusBadge value={ingResult.judgment} />
-                          </div>
-                          <div className="text-xs text-text-muted">{ing.category}</div>
-                          <div className="text-sm">
-                            {ing.allergens.length > 0 ? (
-                              <span className="flex flex-wrap gap-1 items-center">
-                                {ing.allergens.map((a) =>
-                                  ingResult.matchedAllergens.includes(a) ? (
-                                    <span
-                                      key={a}
-                                      className="px-1.5 py-0.5 bg-ng-bg text-ng border border-ng-border rounded text-[11px] font-semibold"
-                                    >
-                                      {a}
-                                    </span>
-                                  ) : (
-                                    <span key={a} className="text-text-secondary text-xs">
-                                      {a}
-                                    </span>
-                                  ),
-                                )}
-                                {ing.allergenUnknown && (
-                                  <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
-                                    不明
-                                  </span>
-                                )}
-                              </span>
-                            ) : ing.allergenUnknown ? (
-                              <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
-                                不明
-                              </span>
-                            ) : (
-                              <span className="text-text-muted text-xs">—</span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {/* Desktop table layout */}
-                  <table className="w-full hidden md:table">
-                    <thead>
-                      <tr className="bg-bg-cream/40">
-                        <th className="py-2.5 px-5 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-left">
-                          食材名
-                        </th>
-                        <th className="py-2.5 px-5 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-left">
-                          カテゴリ
-                        </th>
-                        <th className="py-2.5 px-5 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-left">
-                          含有アレルゲン
-                        </th>
-                        <th className="py-2.5 px-5 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-center w-24">
-                          判定
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dish.linkedIngredients.map((ing) => {
-                        const ingResult = checkIngredient(ing, customerAllergens);
-                        return (
-                          <tr
-                            key={ing.id}
-                            className="border-t border-border-light hover:bg-bg-cream/20 transition-colors"
-                          >
-                            <td className="py-2.5 px-5 text-sm font-medium">{ing.name}</td>
-                            <td className="py-2.5 px-5 text-sm text-text-secondary">
-                              {ing.category}
-                            </td>
-                            <td className="py-2.5 px-5 text-sm">
-                              {ing.allergens.length > 0 ? (
-                                <span className="flex flex-wrap gap-1 items-center">
-                                  {ing.allergens.map((a) =>
-                                    ingResult.matchedAllergens.includes(a) ? (
-                                      <span
-                                        key={a}
-                                        className="px-1.5 py-0.5 bg-ng-bg text-ng border border-ng-border rounded text-[11px] font-semibold"
-                                      >
-                                        {a}
-                                      </span>
-                                    ) : (
-                                      <span key={a} className="text-text-secondary">
-                                        {a}
-                                      </span>
-                                    ),
-                                  )}
-                                  {ing.allergenUnknown && (
-                                    <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
-                                      不明
-                                    </span>
-                                  )}
-                                </span>
-                              ) : ing.allergenUnknown ? (
-                                <span className="px-1.5 py-0.5 bg-caution-bg text-caution border border-caution-border rounded text-[11px] font-semibold">
-                                  不明
-                                </span>
-                              ) : (
-                                "—"
-                              )}
-                            </td>
-                            <td className="py-2.5 px-5 text-center">
-                              <StatusBadge value={ingResult.judgment} />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {dishResults.map(({ dish, judgment, matchedAllergens }) => (
+          <DishAccordion
+            key={dish.id}
+            dish={dish}
+            judgment={judgment}
+            matchedAllergens={matchedAllergens}
+            isOpen={expanded.has(dish.id)}
+            onToggle={() => toggle(dish.id)}
+            customerAllergens={customerAllergens}
+          />
+        ))}
       </div>
 
       <Modal

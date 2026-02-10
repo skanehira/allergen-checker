@@ -306,11 +306,11 @@ export const courses: Course[] = [
   {
     id: 1,
     name: "2月特別懐石コース",
-    dishes: [recipes[1], recipes[0], recipes[2], recipes[3], recipes[4]],
+    dishIds: [2, 1, 3, 4, 5],
   },
   {
     id: 2,
     name: "お祝い会席コース",
-    dishes: [recipes[1], recipes[0], recipes[3], recipes[4]],
+    dishIds: [2, 1, 4, 5],
   },
 ];

@@ -1,9 +1,15 @@
 import { useState } from "react";
-import type { Recipe, Course } from "../data/types";
+import type { Course, Recipe } from "../data/types";
 import { useCourses } from "../hooks/useCourses";
 import { useRecipes } from "../hooks/useRecipes";
 
 type View = "list" | "detail" | "create";
+
+function resolveDishes(course: Course, allRecipes: Recipe[]): Recipe[] {
+  return course.dishIds
+    .map((id) => allRecipes.find((r) => r.id === id))
+    .filter((r): r is Recipe => r !== undefined);
+}
 
 export function CoursePage() {
   const [view, setView] = useState<View>("list");
@@ -14,8 +20,9 @@ export function CoursePage() {
   const [search, setSearch] = useState("");
 
   const selectedCourse = courseList.find((c) => c.id === selectedId) ?? null;
+  const selectedDishes = selectedCourse ? resolveDishes(selectedCourse, allRecipes) : [];
 
-  const courseDishIds = new Set((selectedCourse?.dishes ?? []).map((d) => d.id));
+  const courseDishIds = new Set(selectedCourse?.dishIds ?? []);
   const availableRecipes = allRecipes.filter(
     (r) => !courseDishIds.has(r.id) && (search === "" || r.name.includes(search)),
   );
@@ -29,7 +36,7 @@ export function CoursePage() {
   function addRecipe(recipe: Recipe) {
     if (!selectedId) return;
     setCourseList((prev) =>
-      prev.map((c) => (c.id === selectedId ? { ...c, dishes: [...c.dishes, recipe] } : c)),
+      prev.map((c) => (c.id === selectedId ? { ...c, dishIds: [...c.dishIds, recipe.id] } : c)),
     );
   }
 
@@ -37,7 +44,7 @@ export function CoursePage() {
     if (!selectedId) return;
     setCourseList((prev) =>
       prev.map((c) =>
-        c.id === selectedId ? { ...c, dishes: c.dishes.filter((d) => d.id !== recipeId) } : c,
+        c.id === selectedId ? { ...c, dishIds: c.dishIds.filter((id) => id !== recipeId) } : c,
       ),
     );
   }
@@ -47,13 +54,13 @@ export function CoursePage() {
     setCourseList((prev) =>
       prev.map((c) => {
         if (c.id !== selectedId) return c;
-        const dishes = [...c.dishes];
-        const idx = dishes.findIndex((d) => d.id === recipeId);
+        const dishIds = [...c.dishIds];
+        const idx = dishIds.indexOf(recipeId);
         if (idx < 0) return c;
         const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-        if (swapIdx < 0 || swapIdx >= dishes.length) return c;
-        [dishes[idx], dishes[swapIdx]] = [dishes[swapIdx], dishes[idx]];
-        return { ...c, dishes };
+        if (swapIdx < 0 || swapIdx >= dishIds.length) return c;
+        [dishIds[idx], dishIds[swapIdx]] = [dishIds[swapIdx], dishIds[idx]];
+        return { ...c, dishIds };
       }),
     );
   }
@@ -63,7 +70,7 @@ export function CoursePage() {
     const newCourse: Course = {
       id: Math.max(...courseList.map((c) => c.id)) + 1,
       name: newName.trim(),
-      dishes: [],
+      dishIds: [],
     };
     setCourseList((prev) => [...prev, newCourse]);
     setNewName("");
@@ -90,36 +97,39 @@ export function CoursePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {courseList.map((course) => (
-            <button
-              key={course.id}
-              onClick={() => openDetail(course.id)}
-              className="bg-bg-card border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-elevated transition-all cursor-pointer group"
-            >
-              <h4 className="font-display font-medium text-base group-hover:text-primary transition-colors mb-3">
-                {course.name}
-              </h4>
-              <p className="text-sm text-text-muted">
-                料理数:{" "}
-                <span className="font-medium text-text-secondary">{course.dishes.length}</span> 品
-              </p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {course.dishes.slice(0, 3).map((dish) => (
-                  <span
-                    key={dish.id}
-                    className="text-[11px] px-1.5 py-0.5 bg-bg-cream border border-border-light rounded text-text-muted"
-                  >
-                    {dish.name}
-                  </span>
-                ))}
-                {course.dishes.length > 3 && (
-                  <span className="text-[11px] px-1.5 py-0.5 text-text-muted">
-                    +{course.dishes.length - 3}
-                  </span>
-                )}
-              </div>
-            </button>
-          ))}
+          {courseList.map((course) => {
+            const dishes = resolveDishes(course, allRecipes);
+            return (
+              <button
+                key={course.id}
+                onClick={() => openDetail(course.id)}
+                className="bg-bg-card border border-border rounded-xl p-5 text-left hover:border-primary/40 hover:shadow-elevated transition-all cursor-pointer group"
+              >
+                <h4 className="font-display font-medium text-base group-hover:text-primary transition-colors mb-3">
+                  {course.name}
+                </h4>
+                <p className="text-sm text-text-muted">
+                  料理数: <span className="font-medium text-text-secondary">{dishes.length}</span>{" "}
+                  品
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {dishes.slice(0, 3).map((dish) => (
+                    <span
+                      key={dish.id}
+                      className="text-[11px] px-1.5 py-0.5 bg-bg-cream border border-border-light rounded text-text-muted"
+                    >
+                      {dish.name}
+                    </span>
+                  ))}
+                  {dishes.length > 3 && (
+                    <span className="text-[11px] px-1.5 py-0.5 text-text-muted">
+                      +{dishes.length - 3}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     );
@@ -191,7 +201,7 @@ export function CoursePage() {
         <span className="text-sm text-text-secondary">コース:</span>
         <span className="text-sm font-medium">{selectedCourse?.name}</span>
         <span className="text-xs text-text-muted bg-bg-cream border border-border-light rounded px-2 py-0.5">
-          {selectedCourse?.dishes.length ?? 0} 品
+          {selectedDishes.length} 品
         </span>
       </div>
 
@@ -243,12 +253,10 @@ export function CoursePage() {
             <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider">
               コース内レシピ
             </h4>
-            <p className="text-xs text-text-muted mt-0.5">
-              {selectedCourse?.dishes.length ?? 0} 品
-            </p>
+            <p className="text-xs text-text-muted mt-0.5">{selectedDishes.length} 品</p>
           </div>
           <ul className="divide-y divide-border-light max-h-80 overflow-y-auto">
-            {(selectedCourse?.dishes ?? []).map((dish, idx) => (
+            {selectedDishes.map((dish, idx) => (
               <li
                 key={dish.id}
                 className="flex items-center justify-between px-4 py-2.5 hover:bg-bg-cream/30 transition-colors"
@@ -269,7 +277,7 @@ export function CoursePage() {
                   </button>
                   <button
                     onClick={() => moveRecipe(dish.id, "down")}
-                    disabled={idx === (selectedCourse?.dishes.length ?? 0) - 1}
+                    disabled={idx === selectedDishes.length - 1}
                     className="px-2.5 py-1.5 md:px-1.5 md:py-0.5 text-xs text-text-muted hover:text-text-secondary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     ↓
@@ -283,7 +291,7 @@ export function CoursePage() {
                 </div>
               </li>
             ))}
-            {(selectedCourse?.dishes.length ?? 0) === 0 && (
+            {selectedDishes.length === 0 && (
               <li className="px-4 py-8 text-center text-sm text-text-muted">
                 <span className="md:hidden">上のリストからレシピを追加してください</span>
                 <span className="hidden md:inline">左のリストからレシピを追加してください</span>

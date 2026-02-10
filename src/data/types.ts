@@ -56,7 +56,7 @@ export type Customer = {
 export type Course = {
   id: number;
   name: string;
-  dishes: Recipe[];
+  dishIds: number[];
 };
 
 // ─── 特定原材料28品目 ───
