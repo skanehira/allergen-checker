@@ -481,6 +481,7 @@ export function AssignmentDetailPage() {
   const [courseList] = useCourses();
   const [allRecipes] = useRecipes();
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [editingCourse, setEditingCourse] = useState(false);
 
   // 差し替えモーダル用state
   const [replaceModalDishId, setReplaceModalDishId] = useState<number | null>(null);
@@ -542,6 +543,28 @@ export function AssignmentDetailPage() {
 
   const aid = assignment.id;
   const customizations = assignment.customizations;
+
+  const currentCourseId = assignment.courseId;
+
+  function handleCourseChange(newCourseId: number) {
+    if (newCourseId === currentCourseId) {
+      setEditingCourse(false);
+      return;
+    }
+    const hasCustomizations = customizations.length > 0;
+    if (
+      hasCustomizations &&
+      !window.confirm(
+        "コースを変更すると、料理のカスタマイズ（差し替え・除外など）がリセットされます。よろしいですか？",
+      )
+    ) {
+      return;
+    }
+    setAssignments((prev) =>
+      prev.map((a) => (a.id === aid ? { ...a, courseId: newCourseId, customizations: [] } : a)),
+    );
+    setEditingCourse(false);
+  }
 
   function updateCustomization(dishId: number, changes: Partial<DishCustomization>) {
     setAssignments((prev) =>
@@ -669,6 +692,7 @@ export function AssignmentDetailPage() {
     }
   }
 
+  const courseOptions = courseList.map((c) => ({ value: c.id, label: c.name }));
   const recipeOptions = allRecipes.map((r) => ({ value: r.id, label: r.name }));
 
   return (
@@ -686,7 +710,23 @@ export function AssignmentDetailPage() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="font-display text-lg font-medium">
-              {customer?.name ?? "—"} / {course?.name ?? "—"}
+              {customer?.name ?? "—"} /{" "}
+              {editingCourse ? (
+                <span className="inline-block align-middle w-56">
+                  <SearchableSelect
+                    options={courseOptions}
+                    value={currentCourseId}
+                    onChange={(v) => handleCourseChange(v as number)}
+                  />
+                </span>
+              ) : (
+                <button
+                  onClick={() => setEditingCourse(true)}
+                  className="hover:text-primary transition-colors cursor-pointer border-b border-dashed border-text-muted hover:border-primary"
+                >
+                  {course?.name ?? "—"}
+                </button>
+              )}
             </h3>
             <p className="text-sm text-text-muted mt-1">
               {customer?.roomName} / 提供日: {assignment.date}

@@ -8,6 +8,7 @@ import { checkDish } from "../utils/allergenCheck";
 import { StatusBadge } from "../components/StatusBadge";
 import { SearchableSelect } from "../components/SearchableSelect";
 import { Modal } from "../components/Modal";
+import { ConfirmModal } from "../components/ConfirmModal";
 import type { AssignmentStatus, CustomerCourseAssignment, Recipe } from "../data/types";
 
 function formatDateShort(dateStr: string): string {
@@ -28,6 +29,7 @@ export function DashboardPage() {
   const [newCustomerId, setNewCustomerId] = useState<number>(0);
   const [newCourseId, setNewCourseId] = useState<number>(0);
   const [newDate, setNewDate] = useState("");
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
   function getCounts(assignment: CustomerCourseAssignment) {
     const customer = customers.find((c) => c.id === assignment.customerId);
@@ -212,11 +214,7 @@ export function DashboardPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (
-                              window.confirm(`${customer?.name ?? "この"}の割当を削除しますか？`)
-                            ) {
-                              setAssignments((prev) => prev.filter((x) => x.id !== a.id));
-                            }
+                            setDeleteTargetId(a.id);
                           }}
                           className="text-xs text-text-muted hover:text-ng transition-colors cursor-pointer"
                         >
@@ -256,11 +254,7 @@ export function DashboardPage() {
                     </button>
                     <div className="flex justify-end mt-1">
                       <button
-                        onClick={() => {
-                          if (window.confirm(`${customer?.name ?? "この"}の割当を削除しますか？`)) {
-                            setAssignments((prev) => prev.filter((x) => x.id !== a.id));
-                          }
-                        }}
+                        onClick={() => setDeleteTargetId(a.id)}
                         className="text-xs text-text-muted hover:text-ng transition-colors cursor-pointer"
                       >
                         削除
@@ -319,6 +313,20 @@ export function DashboardPage() {
           </div>
         </div>
       </Modal>
+
+      {/* 削除確認モーダル */}
+      <ConfirmModal
+        open={deleteTargetId != null}
+        title="割当の削除"
+        message={`${customers.find((c) => c.id === assignments.find((a) => a.id === deleteTargetId)?.customerId)?.name ?? "この"}の割当を削除しますか？この操作は元に戻せません。`}
+        confirmLabel="削除"
+        variant="danger"
+        onConfirm={() => {
+          setAssignments((prev) => prev.filter((x) => x.id !== deleteTargetId));
+          setDeleteTargetId(null);
+        }}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   );
 }
