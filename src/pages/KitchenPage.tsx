@@ -4,11 +4,167 @@ import { useCustomers } from "../hooks/useCustomers";
 import { useCourses } from "../hooks/useCourses";
 import { useRecipes } from "../hooks/useRecipes";
 import { resolveCustomizedDishes, customizationLabel } from "../utils/resolveCustomizedDishes";
+import type { ResolvedDish } from "../utils/resolveCustomizedDishes";
+import type { Recipe, CustomIngredient, Ingredient } from "../data/types";
 
 function formatDateShort(dateStr: string): string {
   const d = new Date(dateStr);
   return `${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
 }
+
+// ─── ヘルパー関数 ───
+
+function getOriginalRecipeName(originalDishId: number, allRecipes: Recipe[]): string {
+  return allRecipes.find((r) => r.id === originalDishId)?.name ?? "不明";
+}
+
+function getModifiedIngredients(
+  customIngredients: CustomIngredient[],
+  originalIngredients: Ingredient[],
+): { before: string; after: string }[] {
+  const result: { before: string; after: string }[] = [];
+  for (let i = 0; i < customIngredients.length; i++) {
+    if (customIngredients[i].isModified) {
+      const before = originalIngredients[i]?.name ?? "不明";
+      const after = customIngredients[i].name;
+      result.push({ before, after });
+    }
+  }
+  return result;
+}
+
+function getExcludedIngredientNames(excludedIds: number[], ingredients: Ingredient[]): string[] {
+  return excludedIds
+    .map((id) => ingredients.find((ing) => ing.id === id)?.name)
+    .filter((n): n is string => n != null);
+}
+
+function countCustomizations(resolvedDishes: ResolvedDish[]) {
+  let replaceCount = 0;
+  let modifyCount = 0;
+  let excludeIngCount = 0;
+  let removeDishCount = 0;
+
+  for (const d of resolvedDishes) {
+    if (!d.customization) continue;
+    if (d.customization.action === "replace") replaceCount++;
+    if (d.customization.action === "remove") removeDishCount++;
+    if (
+      d.customization.action === "modify" &&
+      d.customization.customIngredients?.some((i) => i.isModified)
+    ) {
+      modifyCount++;
+    }
+    if (d.excludedIngredientIds.length > 0 && d.customization.action !== "remove") {
+      excludeIngCount++;
+    }
+  }
+
+  return { replaceCount, modifyCount, excludeIngCount, removeDishCount };
+}
+
+function actionBadgeClass(action?: string): string {
+  switch (action) {
+    case "replace":
+      return "bg-primary/10 text-primary border-primary/30";
+    case "modify":
+      return "bg-caution-bg text-caution border-caution-border";
+    default:
+      return "bg-ng-bg text-ng border-ng-border";
+  }
+}
+
+// ─── サブコンポーネント ───
+
+function ChangeSummaryBar({
+  replaceCount,
+  modifyCount,
+  excludeIngCount,
+  removeDishCount,
+}: {
+  replaceCount: number;
+  modifyCount: number;
+  excludeIngCount: number;
+  removeDishCount: number;
+}) {
+  const total = replaceCount + modifyCount + excludeIngCount + removeDishCount;
+  if (total === 0) return null;
+
+  const items: string[] = [];
+  if (replaceCount > 0) items.push(`差し替え${replaceCount}件`);
+  if (modifyCount > 0) items.push(`食材変更${modifyCount}件`);
+  if (excludeIngCount > 0) items.push(`食材除外${excludeIngCount}件`);
+  if (removeDishCount > 0) items.push(`料理除外${removeDishCount}件`);
+
+  return (
+    <div className="px-5 py-2.5 bg-caution-bg border-b border-caution-border/50 print:bg-yellow-50">
+      <p className="text-sm font-bold text-caution">要対応: {items.join(" / ")}</p>
+    </div>
+  );
+}
+
+function ReplaceDetail({
+  originalName,
+  newName,
+  note,
+}: {
+  originalName: string;
+  newName: string;
+  note?: string;
+}) {
+  return (
+    <div className="ml-6 mt-2 border-l-4 border-primary bg-primary/5 rounded-r-lg p-3 print:bg-blue-50">
+      <div className="text-xs font-bold text-primary mb-2">差し替え</div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="bg-white border rounded px-3 py-1.5 text-sm line-through text-text-muted">
+          {originalName}
+        </div>
+        <span className="text-primary font-bold">→</span>
+        <div className="bg-white border-2 border-primary rounded px-3 py-1.5 text-sm font-bold">
+          {newName}
+        </div>
+      </div>
+      {note && <p className="mt-2 text-xs text-text-secondary">理由: {note}</p>}
+    </div>
+  );
+}
+
+function ModifyDetail({
+  modifiedIngredients,
+}: {
+  modifiedIngredients: { before: string; after: string }[];
+}) {
+  if (modifiedIngredients.length === 0) return null;
+  return (
+    <div className="ml-6 mt-2 border-l-4 border-caution bg-caution-bg/40 rounded-r-lg p-3 print:bg-yellow-50">
+      <div className="text-xs font-bold text-caution mb-2">食材変更</div>
+      {modifiedIngredients.map(({ before, after }, i) => (
+        <div key={i} className="flex items-center gap-2 text-sm">
+          <span className="line-through text-text-muted">{before}</span>
+          <span className="text-caution font-bold">→</span>
+          <span className="font-bold text-caution">{after}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ExclusionDetail({ excludedIngredients }: { excludedIngredients: string[] }) {
+  if (excludedIngredients.length === 0) return null;
+  return (
+    <div className="ml-6 mt-2 border-l-4 border-ng bg-ng-bg/40 rounded-r-lg p-3 print:bg-red-50">
+      <div className="text-xs font-bold text-ng mb-2">食材除外</div>
+      {excludedIngredients.map((name) => (
+        <div key={name} className="flex items-center gap-2 text-sm">
+          <span className="line-through text-text-muted">{name}</span>
+          <span className="text-ng text-xs">除外</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── メインコンポーネント ───
 
 export function KitchenPage() {
   const [assignments] = useAssignments();
@@ -69,6 +225,8 @@ export function KitchenPage() {
               assignment.customizations,
             );
             const activeDishes = resolvedDishes.filter((d) => !d.isRemoved);
+            const removedDishes = resolvedDishes.filter((d) => d.isRemoved);
+            const counts = countCustomizations(resolvedDishes);
 
             return (
               <div
@@ -104,76 +262,115 @@ export function KitchenPage() {
                   )}
                 </div>
 
+                {/* 変更サマリーバー */}
+                <ChangeSummaryBar {...counts} />
+
                 {/* 料理リスト */}
                 <div className="divide-y divide-border-light">
-                  {activeDishes.map(({ recipe, customization, isCustomized }, idx) => (
-                    <div
-                      key={`${recipe.id}-${idx}`}
-                      className={`px-5 py-3 ${isCustomized ? "bg-caution-bg/30 print:bg-gray-100" : ""}`}
-                    >
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-text-muted text-sm font-mono">{idx + 1}.</span>
-                        {isCustomized && <span className="text-sm font-bold print:text-lg">★</span>}
-                        <span className={`text-sm font-medium ${isCustomized ? "font-bold" : ""}`}>
-                          {recipe.name}
-                        </span>
-                        {isCustomized && customization && (
-                          <span className="px-2 py-0.5 bg-[#eef2ff] text-[#4338ca] border border-[#c7d2fe] rounded text-[11px] font-semibold print:bg-gray-200 print:text-text print:border-text">
-                            {customizationLabel(customization.action)}
-                          </span>
-                        )}
-                      </div>
+                  {activeDishes.map(
+                    ({ recipe, customization, isCustomized, excludedIngredientIds }, idx) => {
+                      const modifiedIngs =
+                        customization?.action === "modify" && customization.customIngredients
+                          ? getModifiedIngredients(
+                              customization.customIngredients,
+                              recipe.linkedIngredients,
+                            )
+                          : [];
 
-                      {/* カスタマイズ詳細 */}
-                      {customization?.action === "replace" && (
-                        <p className="ml-8 mt-1 text-xs text-text-secondary">
-                          ※ 元の料理から差し替え
-                        </p>
-                      )}
-                      {customization?.action === "modify" && customization.customIngredients && (
-                        <div className="ml-8 mt-1">
-                          <p className="text-xs text-text-muted mb-1">変更後の食材:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {customization.customIngredients.map((ing, i) => (
+                      const excludedIngNames =
+                        excludedIngredientIds.length > 0 && customization?.action !== "remove"
+                          ? getExcludedIngredientNames(
+                              excludedIngredientIds,
+                              recipe.linkedIngredients,
+                            )
+                          : [];
+
+                      const originalName =
+                        customization?.action === "replace"
+                          ? getOriginalRecipeName(customization.originalDishId, allRecipes)
+                          : "";
+
+                      const label = customization
+                        ? (customizationLabel(customization.action) ??
+                          (excludedIngredientIds.length > 0 ? "食材除外" : undefined))
+                        : undefined;
+
+                      return (
+                        <div
+                          key={`${recipe.id}-${idx}`}
+                          className={`px-5 py-3 ${isCustomized ? "bg-caution-bg/20 print:bg-gray-50" : ""}`}
+                        >
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-text-muted text-sm font-mono">{idx + 1}.</span>
+                            {isCustomized && (
+                              <span className="text-sm font-bold print:text-lg">★</span>
+                            )}
+                            <span
+                              className={`text-sm font-medium ${isCustomized ? "font-bold" : ""}`}
+                            >
+                              {recipe.name}
+                            </span>
+                            {isCustomized && label && (
                               <span
-                                key={i}
-                                className={`px-2 py-0.5 rounded text-xs border ${
-                                  ing.isModified
-                                    ? "bg-caution-bg text-caution border-caution-border font-bold print:font-bold"
-                                    : "bg-bg-cream text-text-secondary border-border-light"
-                                }`}
+                                className={`px-2 py-0.5 border rounded text-[11px] font-semibold print:bg-gray-200 print:text-text print:border-text ${actionBadgeClass(customization?.action)}`}
                               >
-                                {ing.name}
+                                {label}
                               </span>
-                            ))}
+                            )}
                           </div>
+
+                          {/* 差し替え詳細 */}
+                          {customization?.action === "replace" && (
+                            <ReplaceDetail
+                              originalName={originalName}
+                              newName={recipe.name}
+                              note={customization.note || undefined}
+                            />
+                          )}
+
+                          {/* 食材変更詳細 */}
+                          <ModifyDetail modifiedIngredients={modifiedIngs} />
+
+                          {/* 食材除外詳細 */}
+                          <ExclusionDetail excludedIngredients={excludedIngNames} />
+
+                          {/* 変更理由（差し替え以外） */}
+                          {customization?.note &&
+                            customization.action !== "replace" &&
+                            isCustomized && (
+                              <p className="ml-6 mt-2 text-xs text-text-secondary">
+                                理由: {customization.note}
+                              </p>
+                            )}
                         </div>
-                      )}
-                      {customization?.note && (
-                        <p className="ml-8 mt-1 text-xs text-text-secondary italic">
-                          メモ: {customization.note}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                      );
+                    },
+                  )}
                 </div>
 
                 {/* 除外された料理 */}
-                {resolvedDishes.some((d) => d.isRemoved) && (
-                  <div className="px-5 py-2 bg-bg-cream/50 border-t border-border-light">
-                    <p className="text-xs text-text-muted">
-                      除外:{" "}
-                      {resolvedDishes
-                        .filter((d) => d.isRemoved)
-                        .map((d) => d.recipe.name)
-                        .join(", ")}
-                    </p>
+                {removedDishes.length > 0 && (
+                  <div className="px-5 py-3 bg-ng-bg/30 border-t-2 border-ng/30 print:bg-red-50">
+                    <div className="text-xs font-bold text-ng mb-2">除外された料理</div>
+                    {removedDishes.map((d) => (
+                      <div key={d.recipe.id} className="flex items-center gap-2 py-1">
+                        <span className="text-ng font-bold">✕</span>
+                        <span className="text-sm line-through text-text-muted">
+                          {d.recipe.name}
+                        </span>
+                        {d.customization?.note && (
+                          <span className="text-xs text-text-secondary ml-2">
+                            理由: {d.customization.note}
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
 
                 {/* 厨房メモ */}
                 {assignment.kitchenNote && (
-                  <div className="px-5 py-3 bg-caution-bg/20 border-t border-border-light">
+                  <div className="px-5 py-3 bg-caution-bg/20 border-t border-border-light print:bg-yellow-50">
                     <p className="text-sm">
                       <span className="font-semibold text-text-secondary">厨房メモ:</span>{" "}
                       {assignment.kitchenNote}
