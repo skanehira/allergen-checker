@@ -25,10 +25,16 @@ export function checkIngredient(
   return { judgment, matchedAllergens };
 }
 
-export function checkDish(recipe: Recipe, customerAllergens: string[]): DishCheckResult {
-  const results = recipe.linkedIngredients.map((i) => checkIngredient(i, customerAllergens));
+export function checkDish(
+  recipe: Recipe,
+  customerAllergens: string[],
+  excludedIngredientIds?: number[],
+): DishCheckResult {
+  const excluded = new Set(excludedIngredientIds ?? []);
+  const activeIngredients = recipe.linkedIngredients.filter((i) => !excluded.has(i.id));
+  const results = activeIngredients.map((i) => checkIngredient(i, customerAllergens));
   const allMatched = [...new Set(results.flatMap((r) => r.matchedAllergens))];
-  const hasUnknown = recipe.linkedIngredients.some((i) => i.allergenUnknown);
+  const hasUnknown = activeIngredients.some((i) => i.allergenUnknown);
   const judgments = results.map((r) => r.judgment);
   let judgment: Judgment;
   if (judgments.includes("NG")) judgment = "NG";

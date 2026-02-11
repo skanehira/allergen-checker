@@ -7,7 +7,6 @@ import { CustomAllergenPage } from "./pages/CustomAllergenPage";
 import { CustomerListPage, CustomerFormPage } from "./pages/CustomerPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { AssignmentDetailPage } from "./pages/AssignmentDetailPage";
-import { CustomizePage } from "./pages/CustomizePage";
 import { KitchenPage } from "./pages/KitchenPage";
 
 export const STEPS = [
@@ -23,7 +22,6 @@ function App() {
         <Route element={<Layout steps={STEPS} />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/dashboard/:assignmentId" element={<AssignmentDetailPage />} />
-          <Route path="/dashboard/:assignmentId/customize" element={<CustomizePage />} />
           <Route path="/kitchen" element={<KitchenPage />} />
           <Route path="/import" element={<ImportPage />} />
           <Route path="/recipe" element={<RecipeLinkPage />} />

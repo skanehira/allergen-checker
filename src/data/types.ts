@@ -94,9 +94,10 @@ export type CustomIngredient = {
 
 export type DishCustomization = {
   originalDishId: number;
-  action: "replace" | "modify" | "remove";
+  action?: "replace" | "modify" | "remove";
   replacementDishId?: number;
   customIngredients?: CustomIngredient[];
+  excludedIngredientIds?: number[];
   note: string;
 };
 
