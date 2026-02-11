@@ -6,9 +6,10 @@ type ModalProps = {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  allowOverflow?: boolean;
 };
 
-export function Modal({ open, onClose, title, children }: ModalProps) {
+export function Modal({ open, onClose, title, children, allowOverflow }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -30,7 +31,9 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div className="bg-bg-card rounded-xl shadow-elevated border border-border w-full max-w-2xl mx-3 md:mx-4 max-h-[85vh] overflow-y-auto animate-fade-in">
+      <div
+        className={`bg-bg-card rounded-xl shadow-elevated border border-border w-full max-w-2xl mx-3 md:mx-4 max-h-[85vh] animate-fade-in ${allowOverflow ? "overflow-visible" : "overflow-y-auto"}`}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h3 className="font-display text-lg font-medium">{title}</h3>
           <button

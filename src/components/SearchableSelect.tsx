@@ -17,6 +17,7 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlightIdx, setHighlightIdx] = useState(0);
+  const [flipUp, setFlipUp] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -32,6 +33,13 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
   useEffect(() => {
     setHighlightIdx(0);
   }, [query, open]);
+
+  useEffect(() => {
+    if (!open || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    setFlipUp(spaceBelow < 240);
+  }, [open]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -116,9 +124,9 @@ export function SearchableSelect({ label, options, value, onChange }: Props) {
 
       {open && (
         <div
-          className={`absolute top-full mt-1 bg-bg-card border border-border rounded-xl shadow-elevated z-50 overflow-hidden animate-fade-in ${
-            inline ? "left-0 sm:right-0 sm:left-auto w-full sm:w-72" : "left-0 w-full"
-          }`}
+          className={`absolute bg-bg-card border border-border rounded-xl shadow-elevated z-50 overflow-hidden animate-fade-in ${
+            flipUp ? "bottom-full mb-1" : "top-full mt-1"
+          } ${inline ? "left-0 sm:right-0 sm:left-auto w-full sm:w-72" : "left-0 w-full"}`}
         >
           <ul ref={listRef} className="max-h-56 overflow-y-auto py-1">
             {filtered.length === 0 && (

@@ -11,6 +11,8 @@ export function MobileBottomNav({ steps }: Props) {
   const currentIndex = steps.findIndex((s) => s.path === location.pathname);
   const isAllergenPage = location.pathname === "/allergens";
   const isCustomerPage = location.pathname.startsWith("/customers");
+  const isDashboardPage = location.pathname.startsWith("/dashboard");
+  const isKitchenPage = location.pathname === "/kitchen";
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-primary-dark safe-area-bottom md:hidden animate-slide-up">
@@ -45,6 +47,51 @@ export function MobileBottomNav({ steps }: Props) {
             </button>
           );
         })}
+        {/* Utility: ダッシュボード */}
+        <button
+          onClick={() => navigate("/dashboard")}
+          className={`flex-1 flex flex-col items-center justify-center min-h-[56px] gap-1 transition-colors cursor-pointer ${
+            isDashboardPage ? "bg-white/10 text-white" : "text-white/35"
+          }`}
+        >
+          <svg
+            className="w-5 h-5 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          <span className="text-[10px] truncate max-w-full px-1">一覧</span>
+        </button>
+        {/* Utility: 厨房連携 */}
+        <button
+          onClick={() => navigate("/kitchen")}
+          className={`flex-1 flex flex-col items-center justify-center min-h-[56px] gap-1 transition-colors cursor-pointer ${
+            isKitchenPage ? "bg-white/10 text-white" : "text-white/35"
+          }`}
+        >
+          <svg
+            className="w-5 h-5 shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M15 2H9v2H7v4h10V4h-2V2z" />
+            <path d="M3 10h18v2H3z" />
+            <path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8" />
+          </svg>
+          <span className="text-[10px] truncate max-w-full px-1">厨房</span>
+        </button>
         {/* Utility: 顧客管理 */}
         <button
           onClick={() => navigate("/customers")}

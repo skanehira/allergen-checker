@@ -16,6 +16,10 @@ export type {
   AllergenItem,
   RawMaterial,
   ImportedIngredient,
+  AssignmentStatus,
+  CustomIngredient,
+  DishCustomization,
+  CustomerCourseAssignment,
 } from "./types";
 
 import type {

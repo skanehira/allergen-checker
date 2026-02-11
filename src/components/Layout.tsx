@@ -8,6 +8,8 @@ type Props = {
 };
 
 const UTILITY_TITLES: Record<string, string> = {
+  "/dashboard": "ダッシュボード",
+  "/kitchen": "厨房連携",
   "/allergens": "アレルゲン管理",
   "/customers": "顧客管理",
 };

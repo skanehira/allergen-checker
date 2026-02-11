@@ -16,6 +16,8 @@ export function Sidebar({ steps }: Props) {
   const currentIndex = steps.findIndex((s) => s.path === location.pathname);
   const isAllergenPage = location.pathname === "/allergens";
   const isCustomerPage = location.pathname.startsWith("/customers");
+  const isDashboardPage = location.pathname.startsWith("/dashboard");
+  const isKitchenPage = location.pathname === "/kitchen";
 
   return (
     <aside className="w-60 shrink-0 bg-primary-dark text-white flex flex-col">
@@ -64,6 +66,53 @@ export function Sidebar({ steps }: Props) {
 
         {/* Utility links */}
         <div className="mt-4 pt-4 border-t border-white/10 space-y-0.5">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 cursor-pointer ${
+              isDashboardPage
+                ? "bg-white/12 text-white font-semibold"
+                : "text-white/50 hover:bg-white/6 hover:text-white/70"
+            }`}
+          >
+            <svg
+              className="w-5 h-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <span className="truncate">ダッシュボード</span>
+          </button>
+          <button
+            onClick={() => navigate("/kitchen")}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 cursor-pointer ${
+              isKitchenPage
+                ? "bg-white/12 text-white font-semibold"
+                : "text-white/50 hover:bg-white/6 hover:text-white/70"
+            }`}
+          >
+            <svg
+              className="w-5 h-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 2H9v2H7v4h10V4h-2V2z" />
+              <path d="M3 10h18v2H3z" />
+              <path d="M5 12v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8" />
+            </svg>
+            <span className="truncate">厨房連携</span>
+          </button>
           <button
             onClick={() => navigate("/customers")}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 cursor-pointer ${

@@ -111,3 +111,25 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+@media print {
+  body {
+    background-color: white !important;
+  }
+
+  aside,
+  nav,
+  header {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .flex.flex-col.h-screen {
+    display: block !important;
+    height: auto !important;
+  }
+}

@@ -1,20 +1,13 @@
 import { useState } from "react";
-import { allergen28Items } from "../data/mock";
-import type { Course, Ingredient, Judgment, Recipe } from "../data/types";
-import { StatusBadge } from "../components/StatusBadge";
-import { SearchableSelect } from "../components/SearchableSelect";
-import { Modal } from "../components/Modal";
-import { useCustomAllergens } from "../hooks/useCustomAllergens";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAssignments } from "../hooks/useAssignments";
 import { useCustomers } from "../hooks/useCustomers";
 import { useCourses } from "../hooks/useCourses";
 import { useRecipes } from "../hooks/useRecipes";
 import { checkIngredient, checkDish, judgmentIcon } from "../utils/allergenCheck";
-
-function resolveDishes(course: Course, allRecipes: Recipe[]): Recipe[] {
-  return course.dishIds
-    .map((id) => allRecipes.find((r) => r.id === id))
-    .filter((r): r is Recipe => r !== undefined);
-}
+import { resolveCustomizedDishes, customizationLabel } from "../utils/resolveCustomizedDishes";
+import { StatusBadge } from "../components/StatusBadge";
+import type { Ingredient, Judgment, Recipe } from "../data/types";
 
 function AllergenBadges({ allergens }: { allergens: string[] }) {
   return (
@@ -84,6 +77,7 @@ function DishAccordion({
   isOpen,
   onToggle,
   customerAllergens,
+  customizationBadge,
 }: {
   dish: Recipe;
   judgment: Judgment;
@@ -91,6 +85,7 @@ function DishAccordion({
   isOpen: boolean;
   onToggle: () => void;
   customerAllergens: string[];
+  customizationBadge?: string;
 }) {
   return (
     <div className="bg-bg-card border border-border rounded-xl overflow-hidden shadow-card">
@@ -98,7 +93,7 @@ function DishAccordion({
         onClick={onToggle}
         className="w-full flex items-center justify-between px-3 py-3 md:px-5 md:py-4 text-left cursor-pointer hover:bg-bg-cream/30 transition-colors"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <span
             className={`text-sm font-bold ${
               judgment === "NG" ? "text-ng" : judgment === "要確認" ? "text-caution" : "text-ok"
@@ -107,9 +102,14 @@ function DishAccordion({
             {judgmentIcon(judgment)}
           </span>
           <span className="font-display font-medium text-sm">{dish.name}</span>
+          {customizationBadge && (
+            <span className="px-2 py-0.5 bg-[#eef2ff] text-[#4338ca] border border-[#c7d2fe] rounded text-[11px] font-semibold">
+              {customizationBadge}
+            </span>
+          )}
           {matchedAllergens.length > 0 && <AllergenBadges allergens={matchedAllergens} />}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <StatusBadge value={judgment} />
           <span className="text-text-muted text-xs">{isOpen ? "▲" : "▼"}</span>
         </div>
@@ -186,40 +186,44 @@ function DishAccordion({
   );
 }
 
-export function AllergenCheckPage() {
+export function AssignmentDetailPage() {
+  const { assignmentId } = useParams<{ assignmentId: string }>();
+  const navigate = useNavigate();
+  const [assignments, setAssignments] = useAssignments();
   const [customers] = useCustomers();
   const [courseList] = useCourses();
   const [allRecipes] = useRecipes();
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number>(customers[0]?.id ?? 0);
-  const [selectedCourseId, setSelectedCourseId] = useState<number>(courseList[0]?.id ?? 0);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const [allergenListOpen, setAllergenListOpen] = useState(false);
-  const { items: customAllergens } = useCustomAllergens();
 
-  const mandatoryItems = allergen28Items.filter((a) => a.category === "義務表示");
-  const recommendedItems = allergen28Items.filter((a) => a.category === "推奨表示");
+  const assignment = assignments.find((a) => a.id === Number(assignmentId));
 
-  const customerOptions = customers.map((c) => ({
-    value: c.id,
-    label: c.name,
-    sub: `${c.roomName} / ${c.checkInDate}`,
-  }));
+  if (!assignment) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-text-muted mb-4">割当が見つかりません</p>
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
+        >
+          ダッシュボードに戻る
+        </button>
+      </div>
+    );
+  }
 
-  const course = courseList.find((c) => c.id === selectedCourseId);
-  const dishes = course ? resolveDishes(course, allRecipes) : [];
-
-  const courseOptions = courseList.map((c) => ({
-    value: c.id,
-    label: c.name,
-    sub: `${resolveDishes(c, allRecipes).length} 品`,
-  }));
-
-  const customer = customers.find((c) => c.id === selectedCustomerId);
+  const customer = customers.find((c) => c.id === assignment.customerId);
+  const course = courseList.find((c) => c.id === assignment.courseId);
   const customerAllergens = customer?.allergens ?? [];
 
-  const dishResults = dishes.map((dish) => {
-    const result = checkDish(dish, customerAllergens);
-    return { dish, ...result };
+  const resolvedDishes = course
+    ? resolveCustomizedDishes(course.dishIds, allRecipes, assignment.customizations)
+    : [];
+
+  const activeDishes = resolvedDishes.filter((d) => !d.isRemoved);
+
+  const dishResults = activeDishes.map(({ recipe, customization, isCustomized }) => {
+    const result = checkDish(recipe, customerAllergens);
+    return { recipe, ...result, customization, isCustomized };
   });
 
   const counts = {
@@ -237,35 +241,33 @@ export function AllergenCheckPage() {
     });
   }
 
+  const aid = assignment.id;
+  function updateStatus(status: "確認済" | "厨房共有済") {
+    setAssignments((prev) => prev.map((a) => (a.id === aid ? { ...a, status } : a)));
+  }
+
   return (
     <div className="space-y-6">
-      {/* 選択エリア */}
-      <div className="bg-bg-card border border-border rounded-xl p-5 shadow-card space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4 sm:items-center">
-          <SearchableSelect
-            label="顧客"
-            options={customerOptions}
-            value={selectedCustomerId}
-            onChange={(v) => {
-              setSelectedCustomerId(v as number);
-              setExpanded(new Set());
-            }}
-          />
-          <SearchableSelect
-            label="コース"
-            options={courseOptions}
-            value={selectedCourseId}
-            onChange={(v) => {
-              setSelectedCourseId(v as number);
-              setExpanded(new Set());
-            }}
-          />
-          <button
-            onClick={() => setAllergenListOpen(true)}
-            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-hover transition-colors cursor-pointer"
-          >
-            アレルゲン一覧
-          </button>
+      {/* 戻るボタン */}
+      <button
+        onClick={() => navigate("/dashboard")}
+        className="text-sm text-text-secondary hover:text-text transition-colors cursor-pointer"
+      >
+        ← ダッシュボードに戻る
+      </button>
+
+      {/* 顧客・コース情報 */}
+      <div className="bg-bg-card border border-border rounded-xl p-5 shadow-card space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-display text-lg font-medium">
+              {customer?.name ?? "—"} / {course?.name ?? "—"}
+            </h3>
+            <p className="text-sm text-text-muted mt-1">
+              {customer?.roomName} / 提供日: {assignment.date}
+            </p>
+          </div>
+          <StatusBadge value={assignment.status} />
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 text-sm">
@@ -298,72 +300,68 @@ export function AllergenCheckPage() {
         </div>
       </div>
 
+      {/* アクションボタン */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => navigate(`/dashboard/${assignment.id}/customize`)}
+          className="px-4 py-2 text-sm border border-border rounded-lg text-text-secondary hover:bg-bg-cream transition-colors cursor-pointer"
+        >
+          カスタマイズ
+        </button>
+        {assignment.status === "未確認" && (
+          <button
+            onClick={() => updateStatus("確認済")}
+            className="px-4 py-2 text-sm bg-ok text-white rounded-lg hover:opacity-90 transition-colors cursor-pointer"
+          >
+            確認済にする
+          </button>
+        )}
+        {(assignment.status === "未確認" || assignment.status === "確認済") && (
+          <button
+            onClick={() => updateStatus("厨房共有済")}
+            className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
+          >
+            厨房共有
+          </button>
+        )}
+      </div>
+
+      {/* 除外された料理の表示 */}
+      {resolvedDishes.some((d) => d.isRemoved) && (
+        <div className="bg-bg-cream border border-border-light rounded-xl p-4">
+          <p className="text-sm text-text-muted mb-2">除外された料理:</p>
+          <div className="flex flex-wrap gap-2">
+            {resolvedDishes
+              .filter((d) => d.isRemoved)
+              .map((d) => (
+                <span
+                  key={d.recipe.id}
+                  className="px-3 py-1 bg-bg-card border border-border rounded-lg text-sm text-text-secondary line-through"
+                >
+                  {d.recipe.name}
+                </span>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* 料理別アコーディオン */}
       <div className="space-y-3">
-        {dishResults.map(({ dish, judgment, matchedAllergens }) => (
+        {dishResults.map(({ recipe, judgment, matchedAllergens, isCustomized, customization }) => (
           <DishAccordion
-            key={dish.id}
-            dish={dish}
+            key={`${recipe.id}-${customization?.originalDishId ?? recipe.id}`}
+            dish={recipe}
             judgment={judgment}
             matchedAllergens={matchedAllergens}
-            isOpen={expanded.has(dish.id)}
-            onToggle={() => toggle(dish.id)}
+            isOpen={expanded.has(customization?.originalDishId ?? recipe.id)}
+            onToggle={() => toggle(customization?.originalDishId ?? recipe.id)}
             customerAllergens={customerAllergens}
+            customizationBadge={
+              isCustomized && customization ? customizationLabel(customization.action) : undefined
+            }
           />
         ))}
       </div>
-
-      <Modal
-        open={allergenListOpen}
-        onClose={() => setAllergenListOpen(false)}
-        title="アレルゲン一覧"
-      >
-        <div className="space-y-5">
-          <div>
-            <h4 className="text-sm font-semibold text-text mb-2">特定原材料 8品目（義務表示）</h4>
-            <div className="flex flex-wrap gap-2">
-              {mandatoryItems.map((item) => (
-                <span
-                  key={item.name}
-                  className="px-3 py-1.5 bg-ng-bg text-ng border border-ng-border rounded-lg text-sm font-semibold"
-                >
-                  {item.name}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div>
-            <h4 className="text-sm font-semibold text-text mb-2">
-              特定原材料に準ずるもの 20品目（推奨表示）
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {recommendedItems.map((item) => (
-                <span
-                  key={item.name}
-                  className="px-3 py-1.5 bg-caution-bg text-caution border border-caution-border rounded-lg text-sm font-semibold"
-                >
-                  {item.name}
-                </span>
-              ))}
-            </div>
-          </div>
-          {customAllergens.length > 0 && (
-            <div>
-              <h4 className="text-sm font-semibold text-text mb-2">カスタムアレルゲン</h4>
-              <div className="flex flex-wrap gap-2">
-                {customAllergens.map((name) => (
-                  <span
-                    key={name}
-                    className="px-3 py-1.5 bg-bg-cream border border-border rounded-lg text-sm font-semibold"
-                  >
-                    {name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </Modal>
     </div>
   );
 }

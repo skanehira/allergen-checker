@@ -82,3 +82,30 @@ export type AllergenItem = {
   name: string;
   category: AllergenCategory;
 };
+
+// ─── 割当・カスタマイズ ───
+
+export type AssignmentStatus = "未確認" | "確認済" | "厨房共有済";
+
+export type CustomIngredient = {
+  name: string;
+  isModified: boolean;
+};
+
+export type DishCustomization = {
+  originalDishId: number;
+  action: "replace" | "modify" | "remove";
+  replacementDishId?: number;
+  customIngredients?: CustomIngredient[];
+  note: string;
+};
+
+export type CustomerCourseAssignment = {
+  id: number;
+  customerId: number;
+  courseId: number;
+  date: string;
+  customizations: DishCustomization[];
+  kitchenNote: string;
+  status: AssignmentStatus;
+};
