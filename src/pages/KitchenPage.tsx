@@ -174,6 +174,19 @@ export function KitchenPage() {
 
   const today = new Date().toISOString().slice(0, 10);
   const [filterDate, setFilterDate] = useState(today);
+  const [collapsedIds, setCollapsedIds] = useState<Set<number>>(new Set());
+
+  const toggleCollapse = (id: number) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const sharedAssignments = assignments.filter(
     (a) => a.status === "厨房共有済" && (!filterDate || a.date === filterDate),
@@ -233,16 +246,27 @@ export function KitchenPage() {
                 key={assignment.id}
                 className="bg-bg-card border border-border rounded-xl shadow-card overflow-hidden print:shadow-none print:break-inside-avoid print:border-2 print:border-text"
               >
-                {/* 顧客情報ヘッダー */}
-                <div className="px-5 py-4 bg-primary-dark text-white print:bg-white print:text-text print:border-b-2 print:border-text">
+                {/* 顧客情報ヘッダー（クリックで折り畳み） */}
+                <button
+                  type="button"
+                  onClick={() => toggleCollapse(assignment.id)}
+                  className="w-full text-left px-5 py-4 bg-primary-dark text-white print:bg-white print:text-text print:border-b-2 print:border-text cursor-pointer"
+                >
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div>
-                      <h3 className="font-display text-lg font-medium print:text-xl print:font-bold">
-                        {customer.name}
-                      </h3>
-                      <p className="text-sm text-white/70 print:text-text-secondary">
-                        {customer.roomName} / {course.name} / {formatDateShort(assignment.date)}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`text-white/70 transition-transform print:hidden ${collapsedIds.has(assignment.id) ? "-rotate-90" : ""}`}
+                      >
+                        ▼
+                      </span>
+                      <div>
+                        <h3 className="font-display text-lg font-medium print:text-xl print:font-bold">
+                          {customer.name}
+                        </h3>
+                        <p className="text-sm text-white/70 print:text-text-secondary">
+                          {customer.roomName} / {course.name} / {formatDateShort(assignment.date)}
+                        </p>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {customer.allergens.map((a) => (
@@ -260,122 +284,128 @@ export function KitchenPage() {
                       条件: {customer.condition} / コンタミ: {customer.contamination}
                     </p>
                   )}
-                </div>
+                </button>
 
-                {/* 変更サマリーバー */}
-                <ChangeSummaryBar {...counts} />
+                {!collapsedIds.has(assignment.id) && (
+                  <>
+                    {/* 変更サマリーバー */}
+                    <ChangeSummaryBar {...counts} />
 
-                {/* 料理リスト */}
-                <div className="divide-y divide-border-light">
-                  {activeDishes.map(
-                    ({ recipe, customization, isCustomized, excludedIngredientIds }, idx) => {
-                      const modifiedIngs =
-                        customization?.action === "modify" && customization.customIngredients
-                          ? getModifiedIngredients(
-                              customization.customIngredients,
-                              recipe.linkedIngredients,
-                            )
-                          : [];
+                    {/* 料理リスト */}
+                    <div className="divide-y divide-border-light">
+                      {activeDishes.map(
+                        ({ recipe, customization, isCustomized, excludedIngredientIds }, idx) => {
+                          const modifiedIngs =
+                            customization?.action === "modify" && customization.customIngredients
+                              ? getModifiedIngredients(
+                                  customization.customIngredients,
+                                  recipe.linkedIngredients,
+                                )
+                              : [];
 
-                      const excludedIngNames =
-                        excludedIngredientIds.length > 0 && customization?.action !== "remove"
-                          ? getExcludedIngredientNames(
-                              excludedIngredientIds,
-                              recipe.linkedIngredients,
-                            )
-                          : [];
+                          const excludedIngNames =
+                            excludedIngredientIds.length > 0 && customization?.action !== "remove"
+                              ? getExcludedIngredientNames(
+                                  excludedIngredientIds,
+                                  recipe.linkedIngredients,
+                                )
+                              : [];
 
-                      const originalName =
-                        customization?.action === "replace"
-                          ? getOriginalRecipeName(customization.originalDishId, allRecipes)
-                          : "";
+                          const originalName =
+                            customization?.action === "replace"
+                              ? getOriginalRecipeName(customization.originalDishId, allRecipes)
+                              : "";
 
-                      const label = customization
-                        ? (customizationLabel(customization.action) ??
-                          (excludedIngredientIds.length > 0 ? "食材除外" : undefined))
-                        : undefined;
+                          const label = customization
+                            ? (customizationLabel(customization.action) ??
+                              (excludedIngredientIds.length > 0 ? "食材除外" : undefined))
+                            : undefined;
 
-                      return (
-                        <div
-                          key={`${recipe.id}-${idx}`}
-                          className={`px-5 py-3 ${isCustomized ? "bg-caution-bg/20 print:bg-gray-50" : ""}`}
-                        >
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-text-muted text-sm font-mono">{idx + 1}.</span>
-                            {isCustomized && (
-                              <span className="text-sm font-bold print:text-lg">★</span>
-                            )}
-                            <span
-                              className={`text-sm font-medium ${isCustomized ? "font-bold" : ""}`}
+                          return (
+                            <div
+                              key={`${recipe.id}-${idx}`}
+                              className={`px-5 py-3 ${isCustomized ? "bg-caution-bg/20 print:bg-gray-50" : ""}`}
                             >
-                              {recipe.name}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-text-muted text-sm font-mono">
+                                  {idx + 1}.
+                                </span>
+                                {isCustomized && (
+                                  <span className="text-sm font-bold print:text-lg">★</span>
+                                )}
+                                <span
+                                  className={`text-sm font-medium ${isCustomized ? "font-bold" : ""}`}
+                                >
+                                  {recipe.name}
+                                </span>
+                                {isCustomized && label && (
+                                  <span
+                                    className={`px-2 py-0.5 border rounded text-[11px] font-semibold print:bg-gray-200 print:text-text print:border-text ${actionBadgeClass(customization?.action)}`}
+                                  >
+                                    {label}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* 差し替え詳細 */}
+                              {customization?.action === "replace" && (
+                                <ReplaceDetail
+                                  originalName={originalName}
+                                  newName={recipe.name}
+                                  note={customization.note || undefined}
+                                />
+                              )}
+
+                              {/* 食材変更詳細 */}
+                              <ModifyDetail modifiedIngredients={modifiedIngs} />
+
+                              {/* 食材除外詳細 */}
+                              <ExclusionDetail excludedIngredients={excludedIngNames} />
+
+                              {/* 変更理由（差し替え以外） */}
+                              {customization?.note &&
+                                customization.action !== "replace" &&
+                                isCustomized && (
+                                  <p className="ml-6 mt-2 text-xs text-text-secondary">
+                                    理由: {customization.note}
+                                  </p>
+                                )}
+                            </div>
+                          );
+                        },
+                      )}
+                    </div>
+
+                    {/* 除外された料理 */}
+                    {removedDishes.length > 0 && (
+                      <div className="px-5 py-3 bg-ng-bg/30 border-t-2 border-ng/30 print:bg-red-50">
+                        <div className="text-xs font-bold text-ng mb-2">除外された料理</div>
+                        {removedDishes.map((d) => (
+                          <div key={d.recipe.id} className="flex items-center gap-2 py-1">
+                            <span className="text-ng font-bold">✕</span>
+                            <span className="text-sm line-through text-text-muted">
+                              {d.recipe.name}
                             </span>
-                            {isCustomized && label && (
-                              <span
-                                className={`px-2 py-0.5 border rounded text-[11px] font-semibold print:bg-gray-200 print:text-text print:border-text ${actionBadgeClass(customization?.action)}`}
-                              >
-                                {label}
+                            {d.customization?.note && (
+                              <span className="text-xs text-text-secondary ml-2">
+                                理由: {d.customization.note}
                               </span>
                             )}
                           </div>
-
-                          {/* 差し替え詳細 */}
-                          {customization?.action === "replace" && (
-                            <ReplaceDetail
-                              originalName={originalName}
-                              newName={recipe.name}
-                              note={customization.note || undefined}
-                            />
-                          )}
-
-                          {/* 食材変更詳細 */}
-                          <ModifyDetail modifiedIngredients={modifiedIngs} />
-
-                          {/* 食材除外詳細 */}
-                          <ExclusionDetail excludedIngredients={excludedIngNames} />
-
-                          {/* 変更理由（差し替え以外） */}
-                          {customization?.note &&
-                            customization.action !== "replace" &&
-                            isCustomized && (
-                              <p className="ml-6 mt-2 text-xs text-text-secondary">
-                                理由: {customization.note}
-                              </p>
-                            )}
-                        </div>
-                      );
-                    },
-                  )}
-                </div>
-
-                {/* 除外された料理 */}
-                {removedDishes.length > 0 && (
-                  <div className="px-5 py-3 bg-ng-bg/30 border-t-2 border-ng/30 print:bg-red-50">
-                    <div className="text-xs font-bold text-ng mb-2">除外された料理</div>
-                    {removedDishes.map((d) => (
-                      <div key={d.recipe.id} className="flex items-center gap-2 py-1">
-                        <span className="text-ng font-bold">✕</span>
-                        <span className="text-sm line-through text-text-muted">
-                          {d.recipe.name}
-                        </span>
-                        {d.customization?.note && (
-                          <span className="text-xs text-text-secondary ml-2">
-                            理由: {d.customization.note}
-                          </span>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )}
 
-                {/* 厨房メモ */}
-                {assignment.kitchenNote && (
-                  <div className="px-5 py-3 bg-caution-bg/20 border-t border-border-light print:bg-yellow-50">
-                    <p className="text-sm">
-                      <span className="font-semibold text-text-secondary">厨房メモ:</span>{" "}
-                      {assignment.kitchenNote}
-                    </p>
-                  </div>
+                    {/* 厨房メモ */}
+                    {assignment.kitchenNote && (
+                      <div className="px-5 py-3 bg-caution-bg/20 border-t border-border-light print:bg-yellow-50">
+                        <p className="text-sm">
+                          <span className="font-semibold text-text-secondary">厨房メモ:</span>{" "}
+                          {assignment.kitchenNote}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             );

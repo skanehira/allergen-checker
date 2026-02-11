@@ -172,6 +172,9 @@ export function DashboardPage() {
                   <th className="py-2.5 px-4 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-center">
                     状態
                   </th>
+                  <th className="py-2.5 px-4 text-[11px] font-semibold text-text-muted uppercase tracking-wider text-center">
+                    操作
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -205,6 +208,21 @@ export function DashboardPage() {
                       <td className="py-3 px-4 text-center">
                         <StatusBadge value={a.status} />
                       </td>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (
+                              window.confirm(`${customer?.name ?? "この"}の割当を削除しますか？`)
+                            ) {
+                              setAssignments((prev) => prev.filter((x) => x.id !== a.id));
+                            }
+                          }}
+                          className="text-xs text-text-muted hover:text-ng transition-colors cursor-pointer"
+                        >
+                          削除
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -218,24 +236,37 @@ export function DashboardPage() {
                 const course = courseList.find((c) => c.id === a.courseId);
                 const counts = getCounts(a);
                 return (
-                  <button
-                    key={a.id}
-                    onClick={() => navigate(`/dashboard/${a.id}`)}
-                    className="w-full px-4 py-3 text-left hover:bg-bg-cream/30 transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm">{customer?.name ?? "—"}</span>
-                      <StatusBadge value={a.status} />
+                  <div key={a.id} className="px-4 py-3 hover:bg-bg-cream/30 transition-colors">
+                    <button
+                      onClick={() => navigate(`/dashboard/${a.id}`)}
+                      className="w-full text-left cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-sm">{customer?.name ?? "—"}</span>
+                        <StatusBadge value={a.status} />
+                      </div>
+                      <div className="text-xs text-text-muted mb-2">
+                        {course?.name ?? "—"} / {formatDateShort(a.date)}
+                      </div>
+                      <div className="flex gap-3 text-xs">
+                        <span className="text-ok font-semibold">OK {counts.OK}</span>
+                        <span className="text-ng font-semibold">NG {counts.NG}</span>
+                        <span className="text-caution font-semibold">? {counts.要確認}</span>
+                      </div>
+                    </button>
+                    <div className="flex justify-end mt-1">
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`${customer?.name ?? "この"}の割当を削除しますか？`)) {
+                            setAssignments((prev) => prev.filter((x) => x.id !== a.id));
+                          }
+                        }}
+                        className="text-xs text-text-muted hover:text-ng transition-colors cursor-pointer"
+                      >
+                        削除
+                      </button>
                     </div>
-                    <div className="text-xs text-text-muted mb-2">
-                      {course?.name ?? "—"} / {formatDateShort(a.date)}
-                    </div>
-                    <div className="flex gap-3 text-xs">
-                      <span className="text-ok font-semibold">OK {counts.OK}</span>
-                      <span className="text-ng font-semibold">NG {counts.NG}</span>
-                      <span className="text-caution font-semibold">? {counts.要確認}</span>
-                    </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
