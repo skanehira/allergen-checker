@@ -1,6 +1,11 @@
+import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { TourHelpButton } from "../tour/TourHelpButton";
+import { useTour } from "../tour/useTour";
+import { useTourCompleted } from "../tour/useTourCompleted";
+import { welcomeTour } from "../tour/steps";
 import type { Step } from "./Sidebar";
 
 type Props = {
@@ -17,6 +22,15 @@ const UTILITY_TITLES: Record<string, string> = {
 export function Layout({ steps }: Props) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { startTour, activeTour } = useTour();
+  const { isCompleted } = useTourCompleted();
+
+  useEffect(() => {
+    if (!isCompleted("welcome") && !activeTour) {
+      const timer = setTimeout(() => startTour(welcomeTour), 500);
+      return () => clearTimeout(timer);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentIndex = steps.findIndex((s) => s.path === location.pathname);
   const isStepPage = currentIndex >= 0;
@@ -53,26 +67,29 @@ export function Layout({ steps }: Props) {
               </h2>
             )}
           </div>
-          {isStepPage && (
-            <div className="hidden sm:flex items-center gap-2">
-              {!isFirst && (
-                <button
-                  onClick={() => navigate(steps[currentIndex - 1].path)}
-                  className="px-4 py-2 text-sm border border-border rounded-lg text-text-secondary hover:bg-bg-cream transition-colors cursor-pointer"
-                >
-                  ← 前へ
-                </button>
-              )}
-              {!isLast && (
-                <button
-                  onClick={() => navigate(steps[currentIndex + 1].path)}
-                  className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
-                >
-                  次へ: {steps[currentIndex + 1]?.label} →
-                </button>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {isStepPage && (
+              <div className="hidden sm:flex items-center gap-2">
+                {!isFirst && (
+                  <button
+                    onClick={() => navigate(steps[currentIndex - 1].path)}
+                    className="px-4 py-2 text-sm border border-border rounded-lg text-text-secondary hover:bg-bg-cream transition-colors cursor-pointer"
+                  >
+                    ← 前へ
+                  </button>
+                )}
+                {!isLast && (
+                  <button
+                    onClick={() => navigate(steps[currentIndex + 1].path)}
+                    className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
+                  >
+                    次へ: {steps[currentIndex + 1]?.label} →
+                  </button>
+                )}
+              </div>
+            )}
+            <TourHelpButton />
+          </div>
         </header>
 
         {/* Main content */}

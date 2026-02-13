@@ -96,7 +96,7 @@ export function DashboardPage() {
     <div className="space-y-4">
       {/* フィルタ＋新規ボタン */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
+        <div id="dashboard-filters" className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-text-secondary">
             日付:
             <input
@@ -129,6 +129,7 @@ export function DashboardPage() {
           )}
         </div>
         <button
+          id="dashboard-create-btn"
           onClick={openModal}
           className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-light transition-colors cursor-pointer shrink-0"
         >
@@ -137,7 +138,10 @@ export function DashboardPage() {
       </div>
 
       {/* テーブル（デスクトップ） */}
-      <div className="bg-bg-card border border-border rounded-xl shadow-card overflow-hidden">
+      <div
+        id="dashboard-table"
+        className="bg-bg-card border border-border rounded-xl shadow-card overflow-hidden"
+      >
         {filtered.length === 0 ? (
           <div className="px-6 py-12 text-center text-text-muted text-sm">
             {assignments.length === 0

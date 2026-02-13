@@ -29,7 +29,10 @@ export function CustomAllergenPage() {
   return (
     <div className="space-y-6">
       {/* 特定原材料28品目（読み取り専用） */}
-      <div className="bg-bg-card border border-border rounded-xl p-5 shadow-card space-y-5">
+      <div
+        id="allergen-standard-section"
+        className="bg-bg-card border border-border rounded-xl p-5 shadow-card space-y-5"
+      >
         <h3 className="font-display text-base font-semibold">特定原材料28品目</h3>
         <div>
           <h4 className="text-sm font-semibold text-text mb-2">特定原材料 8品目（義務表示）</h4>
@@ -62,7 +65,10 @@ export function CustomAllergenPage() {
       </div>
 
       {/* カスタムアレルゲン */}
-      <div className="bg-bg-card border border-border rounded-xl p-5 shadow-card space-y-4">
+      <div
+        id="allergen-custom-section"
+        className="bg-bg-card border border-border rounded-xl p-5 shadow-card space-y-4"
+      >
         <h3 className="font-display text-base font-semibold">カスタムアレルゲン</h3>
         <div className="flex gap-2 items-start">
           <div className="flex-1">

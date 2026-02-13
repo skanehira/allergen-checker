@@ -29,7 +29,7 @@ export function Sidebar({ steps }: Props) {
       </div>
 
       {/* Steps */}
-      <nav className="flex-1 px-3 py-5">
+      <nav id="sidebar-steps" className="flex-1 px-3 py-5">
         <ul className="space-y-0.5">
           {steps.map((step, idx) => {
             const isActive = idx === currentIndex;
@@ -67,6 +67,7 @@ export function Sidebar({ steps }: Props) {
         {/* Utility links */}
         <div className="mt-4 pt-4 border-t border-white/10 space-y-0.5">
           <button
+            id="sidebar-dashboard"
             onClick={() => navigate("/dashboard")}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 cursor-pointer ${
               isDashboardPage
@@ -91,6 +92,7 @@ export function Sidebar({ steps }: Props) {
             <span className="truncate">ダッシュボード</span>
           </button>
           <button
+            id="sidebar-kitchen"
             onClick={() => navigate("/kitchen")}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 cursor-pointer ${
               isKitchenPage
@@ -114,6 +116,7 @@ export function Sidebar({ steps }: Props) {
             <span className="truncate">厨房連携</span>
           </button>
           <button
+            id="sidebar-customers"
             onClick={() => navigate("/customers")}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 cursor-pointer ${
               isCustomerPage
@@ -136,6 +139,7 @@ export function Sidebar({ steps }: Props) {
             <span className="truncate">顧客管理</span>
           </button>
           <button
+            id="sidebar-allergens"
             onClick={() => navigate("/allergens")}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] transition-all duration-200 cursor-pointer ${
               isAllergenPage

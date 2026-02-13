@@ -70,6 +70,7 @@ export function RecipeLinkPage() {
         <div className="flex items-center justify-between">
           <h3 className="font-display text-base font-medium text-text-secondary">レシピ一覧</h3>
           <button
+            id="recipe-create-btn"
             onClick={() => {
               setNewName("");
               setView("create");
@@ -80,7 +81,10 @@ export function RecipeLinkPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+          id="recipe-list-section"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           {recipeList.map((recipe) => (
             <button
               key={recipe.id}

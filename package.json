@@ -12,6 +12,7 @@
     "check": "oxfmt --write src && oxlint --deny-warnings && tsc -b"
   },
   "dependencies": {
+    "@floating-ui/react": "^0.27.17",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.0"

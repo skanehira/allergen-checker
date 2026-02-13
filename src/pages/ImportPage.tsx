@@ -126,7 +126,10 @@ export function ImportPage() {
           ファイルアップロード
         </h3>
 
-        <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide md:overflow-visible">
+        <div
+          id="import-filter-tabs"
+          className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide md:overflow-visible"
+        >
           {filters.map((f) => (
             <button
               key={f}
@@ -143,6 +146,7 @@ export function ImportPage() {
         </div>
 
         <div
+          id="import-upload-area"
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
@@ -177,7 +181,7 @@ export function ImportPage() {
       </section>
 
       {/* Queue */}
-      <section>
+      <section id="import-queue-section">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display text-base font-medium text-text-secondary">取込キュー</h3>
           <span className="text-xs text-text-muted">{displayed.length} 件</span>
@@ -309,7 +313,7 @@ export function ImportPage() {
       </section>
 
       {/* Normalization */}
-      <section className="space-y-6">
+      <section id="import-normalize-section" className="space-y-6">
         <h3 className="font-display text-base font-medium text-text-secondary">正規化確認</h3>
 
         {/* Summary */}

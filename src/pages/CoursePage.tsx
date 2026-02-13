@@ -86,6 +86,7 @@ export function CoursePage() {
         <div className="flex items-center justify-between">
           <h3 className="font-display text-base font-medium text-text-secondary">コース一覧</h3>
           <button
+            id="course-create-btn"
             onClick={() => {
               setNewName("");
               setView("create");
@@ -96,7 +97,10 @@ export function CoursePage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div
+          id="course-list-section"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           {courseList.map((course) => {
             const dishes = resolveDishes(course, allRecipes);
             return (

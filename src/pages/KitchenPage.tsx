@@ -195,7 +195,7 @@ export function KitchenPage() {
   return (
     <div className="space-y-4 print:space-y-6">
       {/* フィルタ＋印刷ボタン（印刷時は非表示） */}
-      <div className="flex items-center justify-between print:hidden">
+      <div id="kitchen-header" className="flex items-center justify-between print:hidden">
         <label className="flex items-center gap-2 text-sm text-text-secondary">
           日付:
           <input
@@ -206,6 +206,7 @@ export function KitchenPage() {
           />
         </label>
         <button
+          id="kitchen-print-btn"
           onClick={() => window.print()}
           className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
         >
@@ -226,7 +227,7 @@ export function KitchenPage() {
             : "厨房共有済のデータはありません"}
         </div>
       ) : (
-        <div className="space-y-4 print:space-y-6">
+        <div id="kitchen-sheets" className="space-y-4 print:space-y-6">
           {sharedAssignments.map((assignment) => {
             const customer = customers.find((c) => c.id === assignment.customerId);
             const course = courseList.find((c) => c.id === assignment.courseId);

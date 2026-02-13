@@ -240,6 +240,7 @@ export function CustomerListPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <button
+          id="customer-create-btn"
           onClick={() => navigate("/customers/new")}
           className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-light transition-colors cursor-pointer"
         >
@@ -251,7 +252,10 @@ export function CustomerListPage() {
         <div className="text-center py-12 text-text-muted text-sm">顧客が登録されていません</div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div
+        id="customer-list-section"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
         {customerList.map((customer) => (
           <div
             key={customer.id}

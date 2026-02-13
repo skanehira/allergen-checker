@@ -112,7 +112,16 @@ body {
   display: none;
 }
 
+.tour-overlay {
+  transition: opacity 200ms ease-out;
+}
+
 @media print {
+  .tour-overlay,
+  [class*="z-[61]"] {
+    display: none !important;
+  }
+
   body {
     background-color: white !important;
   }
